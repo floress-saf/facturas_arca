@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Entorno
+.env
+
+# IDE
+.vscode/
+
+# Archivos generados
+uploads/
+facturas_generadas/
+
+# Certificados
+certs/
+
+# OS
+Thumbs.db
+Desktop.ini

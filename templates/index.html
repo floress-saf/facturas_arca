@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Inicio · Facturación ARCA{% endblock %}
+{% block page_title %}Panel de Facturación Electrónica{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>{{ total }}</h3>
+                <p>Comprobantes emitidos</p>
+            </div>
+            <div class="icon"><i class="fas fa-file-invoice-dollar"></i></div>
+            <a href="/emitidas" class="small-box-footer">Ver todos <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    <div class="col-lg-4 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3><i class="fas fa-plus"></i></h3>
+                <p>Emitir nuevo comprobante</p>
+            </div>
+            <div class="icon"><i class="fas fa-file-medical"></i></div>
+            <a href="/emitir" class="small-box-footer">Emitir <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+</div>
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i> <b>Modo Homologación</b> — Los comprobantes se emiten contra el servidor de testing de ARCA. No tienen validez fiscal.
+</div>
+{% endblock %}

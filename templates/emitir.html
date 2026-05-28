@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Emitir · Facturación ARCA{% endblock %}
+{% block page_title %}Emitir comprobante electrónico{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-file-invoice-dollar"></i> Datos del comprobante</h3>
+            </div>
+            <div class="card-body">
+                <form id="form-emitir">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Tipo de comprobante</label>
+                                <select class="form-control" id="tipo_cmp" required onchange="consultarUltimo()">
+                                    {% for id, nombre in tipos.items() %}
+                                    <option value="{{ id }}">{{ nombre }} ({{ id }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Punto de venta</label>
+                                <input type="number" class="form-control" id="pto_vta" value="1" min="1" max="99999" required onchange="consultarUltimo()">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Próximo Nro.</label>
+                                <input type="text" class="form-control" id="nro_cmp" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Concepto</label>
+                                <select class="form-control" id="concepto">
+                                    <option value="1">Productos</option>
+                                    <option value="2" selected>Servicios</option>
+                                    <option value="3">Productos y Servicios</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h5>Receptor</h5>
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Tipo Doc.</label>
+                                <select class="form-control" id="doc_tipo">
+                                    <option value="80">CUIT</option>
+                                    <option value="96">DNI</option>
+                                    <option value="99">Cons. Final</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Nro. Documento</label>
+                                <input type="text" class="form-control" id="doc_nro" maxlength="11" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Razón Social / Nombre</label>
+                                <input type="text" class="form-control" id="nombre_receptor">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Cond. IVA Receptor</label>
+                                <select class="form-control" id="cond_iva_receptor">
+                                    <option value="Responsable Inscripto">Resp. Inscripto</option>
+                                    <option value="Monotributista">Monotributista</option>
+                                    <option value="Exento">Exento</option>
+                                    <option value="Consumidor Final">Consumidor Final</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h5>Importes</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Importe Neto</label>
+                                <input type="number" class="form-control" id="importe_neto" step="0.01" min="0" required onchange="calcularTotal()">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Alícuota IVA</label>
+                                <select class="form-control" id="iva_id" onchange="calcularTotal()">
+                                    {% for id, data in alicuotas.items() %}
+                                    <option value="{{ id }}" data-porcentaje="{{ data.porcentaje }}" {% if id == 5 %}selected{% endif %}>{{ data.desc }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>IVA</label>
+                                <input type="number" class="form-control" id="importe_iva" step="0.01" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Exento</label>
+                                <input type="number" class="form-control" id="importe_exento" step="0.01" value="0" onchange="calcularTotal()">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label><b>TOTAL</b></label>
+                                <input type="number" class="form-control font-weight-bold" id="importe_total" step="0.01" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Moneda</label>
+                                <select class="form-control" id="moneda">
+                                    <option value="PES">ARS</option>
+                                    <option value="DOL">USD</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <button type="button" class="btn btn-primary btn-lg" onclick="emitirFactura()">
+                        <i class="fas fa-paper-plane"></i> Solicitar CAE y emitir
+                    </button>
+                    <div id="resultado" class="mt-3"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    // Consultar último comprobante al cargar
+    window.addEventListener("load", consultarUltimo);
+
+    async function consultarUltimo() {
+        const pto_vta = document.getElementById("pto_vta").value;
+        const tipo_cmp = document.getElementById("tipo_cmp").value;
+        try {
+            const res = await fetch(`/emitir/ultimo?pto_vta=${pto_vta}&tipo_cmp=${tipo_cmp}`);
+            const data = await res.json();
+            if (data.ok) {
+                document.getElementById("nro_cmp").value = data.siguiente;
+            } else {
+                document.getElementById("nro_cmp").value = "Error";
+            }
+        } catch (e) {
+            document.getElementById("nro_cmp").value = "Error";
+        }
+    }
+
+    function calcularTotal() {
+        const neto = parseFloat(document.getElementById("importe_neto").value) || 0;
+        const exento = parseFloat(document.getElementById("importe_exento").value) || 0;
+        const select = document.getElementById("iva_id");
+        const porcentaje = parseFloat(select.options[select.selectedIndex].dataset.porcentaje) || 0;
+        const iva = neto * porcentaje / 100;
+        document.getElementById("importe_iva").value = iva.toFixed(2);
+        document.getElementById("importe_total").value = (neto + iva + exento).toFixed(2);
+    }
+
+    async function emitirFactura() {
+        const resultado = document.getElementById("resultado");
+        resultado.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Solicitando CAE a ARCA...</div>';
+
+        const datos = {
+            tipo_cmp: document.getElementById("tipo_cmp").value,
+            pto_vta: document.getElementById("pto_vta").value,
+            concepto: document.getElementById("concepto").value,
+            doc_tipo: document.getElementById("doc_tipo").value,
+            doc_nro: document.getElementById("doc_nro").value,
+            nombre_receptor: document.getElementById("nombre_receptor").value,
+            cond_iva_receptor: document.getElementById("cond_iva_receptor").value,
+            importe_neto: document.getElementById("importe_neto").value,
+            importe_iva: document.getElementById("importe_iva").value,
+            importe_exento: document.getElementById("importe_exento").value,
+            importe_total: document.getElementById("importe_total").value,
+            moneda: document.getElementById("moneda").value,
+            iva_id: document.getElementById("iva_id").value,
+        };
+
+        try {
+            const res = await fetch("/emitir/solicitar", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(datos)
+            });
+            const data = await res.json();
+
+            if (data.ok) {
+                resultado.innerHTML = `
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-check-circle"></i> Comprobante autorizado</h5>
+                        <p><b>CAE:</b> ${data.cae}</p>
+                        <p><b>Vto. CAE:</b> ${data.cae_vto}</p>
+                        <p><b>Nro. Comprobante:</b> ${data.nro_cmp}</p>
+                        <a href="${data.pdf}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file-pdf"></i> Ver PDF</a>
+                    </div>`;
+                consultarUltimo();
+            } else {
+                resultado.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times-circle"></i> ${data.error}</div>`;
+            }
+        } catch (e) {
+            resultado.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times-circle"></i> Error de comunicación.</div>';
+        }
+    }
+</script>
+{% endblock %}
+{% endblock %}

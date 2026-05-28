@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login · Facturación ARCA</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+</head>
+<body class="hold-transition login-page">
+<div class="login-box">
+    <div class="card card-outline card-primary">
+        <div class="card-header text-center">
+            <span class="h1"><b>ARCA</b> Facturación</span>
+        </div>
+        <div class="card-body">
+            <p class="login-box-msg">Ingresá con tu CUIL</p>
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+            <form action="/login" method="POST">
+                <div class="input-group mb-3">
+                    <input type="text" name="cuil" class="form-control" placeholder="CUIL" maxlength="11" required autofocus>
+                    <div class="input-group-append"><div class="input-group-text"><i class="fas fa-id-card"></i></div></div>
+                </div>
+                <div class="input-group mb-3">
+                    <input type="password" name="password" class="form-control" placeholder="Contraseña" required>
+                    <div class="input-group-append"><div class="input-group-text"><i class="fas fa-lock"></i></div></div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

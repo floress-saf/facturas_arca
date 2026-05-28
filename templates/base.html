@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Facturación ARCA{% endblock %}</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    {% block extra_styles %}{% endblock %}
+</head>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <ul class="navbar-nav">
+            <li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a></li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item"><span class="nav-link"><i class="fas fa-user"></i> {{ session.get('nombre', '') }}</span></li>
+            <li class="nav-item"><a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+        </ul>
+    </nav>
+
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="/" class="brand-link">
+            <span class="brand-text font-weight-light" style="margin-left:12px;"><b>ARCA</b> Facturación</span>
+        </a>
+        <div class="sidebar">
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview">
+                    <li class="nav-header">MENÚ</li>
+                    <li class="nav-item">
+                        <a href="/" class="nav-link {% if active == 'inicio' %}active{% endif %}">
+                            <i class="nav-icon fas fa-home"></i><p>Inicio</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/emitir" class="nav-link {% if active == 'emitir' %}active{% endif %}">
+                            <i class="nav-icon fas fa-file-invoice-dollar"></i><p>Emitir factura</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/emitidas" class="nav-link {% if active == 'emitidas' %}active{% endif %}">
+                            <i class="nav-icon fas fa-list"></i><p>Comprobantes emitidos</p>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <h1 class="m-0">{% block page_title %}{% endblock %}</h1>
+            </div>
+        </div>
+        <section class="content">
+            <div class="container-fluid">{% block content %}{% endblock %}</div>
+        </section>
+    </div>
+
+    <footer class="main-footer">
+        <strong>&copy; 2026 Sergio Flores</strong> - Facturación Electrónica (Homologación)
+    </footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>
