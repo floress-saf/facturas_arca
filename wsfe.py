@@ -220,6 +220,7 @@ def fe_cae_solicitar(datos):
                     <ar:ImpTrib>0.00</ar:ImpTrib>
                     <ar:MonId>{datos.get('moneda_id', 'PES')}</ar:MonId>
                     <ar:MonCotiz>{datos.get('moneda_cotiz', 1)}</ar:MonCotiz>
+                    <ar:CondicionIvaReceptorId>{datos.get('condicion_iva_receptor_id', 1)}</ar:CondicionIvaReceptorId>
                     {fechas_servicio}
                     {iva_xml}
                 </ar:FECAEDetRequest>

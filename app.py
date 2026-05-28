@@ -5,14 +5,15 @@ import os
 import hashlib
 import datetime
 from functools import wraps
-from flask import Flask, render_template, jsonify, request, session, redirect, send_file
 from dotenv import load_dotenv
+
+load_dotenv()
+
+from flask import Flask, render_template, jsonify, request, session, redirect, send_file
 import mysql.connector
 from wsfe import fe_comp_ultimo_autorizado, fe_cae_solicitar
 from generar_pdf import generar_pdf_factura
 from db import get_conexion, crear_tabla_emitidas, insertar_factura_emitida
-
-load_dotenv()
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
@@ -158,6 +159,16 @@ def solicitar_cae():
         return jsonify({"error": f"Error al consultar último comprobante: {e}"}), 500
 
     # Armar datos para ARCA
+    # Mapeo de condición IVA receptor a ID de ARCA
+    COND_IVA_MAP = {
+        "Responsable Inscripto": 1,
+        "Monotributista": 6,
+        "Exento": 4,
+        "Consumidor Final": 5,
+    }
+    cond_iva_receptor = data.get("cond_iva_receptor", "Consumidor Final")
+    cond_iva_receptor_id = COND_IVA_MAP.get(cond_iva_receptor, 5)
+
     datos_wsfe = {
         "tipo_cmp": tipo_cmp,
         "pto_vta": pto_vta,
@@ -173,6 +184,7 @@ def solicitar_cae():
         "importe_no_gravado": 0,
         "moneda_id": moneda,
         "moneda_cotiz": 1,
+        "condicion_iva_receptor_id": cond_iva_receptor_id,
         "iva_items": [{"id": iva_id, "base_imp": importe_neto, "importe": importe_iva}] if importe_iva > 0 else []
     }
 
