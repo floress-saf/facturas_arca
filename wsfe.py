@@ -71,8 +71,21 @@ def _login_wsaa(cert_path, key_path):
     </soapenv:Envelope>"""
 
     headers = {"Content-Type": "text/xml; charset=utf-8", "SOAPAction": ""}
-    resp = requests.post(WSAA_URL, data=soap_body.encode("utf-8"), headers=headers, timeout=30)
-    resp.raise_for_status()
+
+    # Reintentos (el servidor de homologación es inestable)
+    import time
+    max_intentos = 3
+    for intento in range(max_intentos):
+        try:
+            resp = requests.post(WSAA_URL, data=soap_body.encode("utf-8"), headers=headers, timeout=30)
+            resp.raise_for_status()
+            break
+        except requests.exceptions.RequestException as e:
+            if intento < max_intentos - 1:
+                log.warning(f"WSAA intento {intento + 1} falló: {e}. Reintentando en 3s...")
+                time.sleep(3)
+            else:
+                raise Exception(f"WSAA no responde después de {max_intentos} intentos: {e}")
 
     tree = etree.fromstring(resp.content)
     login_resp = tree.find(".//{http://wsaa.view.sua.dvadac.desein.afip.gov}loginCmsReturn")
@@ -131,9 +144,20 @@ def _soap_call(method, body_content):
         "SOAPAction": f"http://ar.gov.afip.dif.FEV1/{method}"
     }
 
-    resp = requests.post(WSFE_URL, data=soap.encode("utf-8"), headers=headers, timeout=30)
-    resp.raise_for_status()
-    return etree.fromstring(resp.content)
+    # Reintentos
+    import time
+    max_intentos = 3
+    for intento in range(max_intentos):
+        try:
+            resp = requests.post(WSFE_URL, data=soap.encode("utf-8"), headers=headers, timeout=30)
+            resp.raise_for_status()
+            return etree.fromstring(resp.content)
+        except requests.exceptions.RequestException as e:
+            if intento < max_intentos - 1:
+                log.warning(f"WSFEv1 intento {intento + 1} falló: {e}. Reintentando en 3s...")
+                time.sleep(3)
+            else:
+                raise Exception(f"WSFEv1 no responde después de {max_intentos} intentos: {e}")
 
 
 def fe_comp_ultimo_autorizado(pto_vta, tipo_cmp):
