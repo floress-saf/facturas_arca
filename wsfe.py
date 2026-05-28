@@ -209,7 +209,6 @@ def fe_cae_solicitar(datos):
                     <ar:Concepto>{datos.get('concepto', 1)}</ar:Concepto>
                     <ar:DocTipo>{datos.get('doc_tipo', 80)}</ar:DocTipo>
                     <ar:DocNro>{datos['doc_nro']}</ar:DocNro>
-                    <ar:CondicionIvaReceptorId>{datos.get('condicion_iva_receptor_id', 5)}</ar:CondicionIvaReceptorId>
                     <ar:CbteDesde>{datos['nro_cmp']}</ar:CbteDesde>
                     <ar:CbteHasta>{datos['nro_cmp']}</ar:CbteHasta>
                     <ar:CbteFch>{datos['fecha']}</ar:CbteFch>
@@ -223,6 +222,7 @@ def fe_cae_solicitar(datos):
                     <ar:MonCotiz>{datos.get('moneda_cotiz', 1)}</ar:MonCotiz>
                     {fechas_servicio}
                     {iva_xml}
+                    <ar:CondicionIvaReceptorId>{datos.get('condicion_iva_receptor_id', 5)}</ar:CondicionIvaReceptorId>
                 </ar:FECAEDetRequest>
             </ar:FeDetReq>
         </ar:FeCAEReq>
