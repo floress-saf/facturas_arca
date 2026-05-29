@@ -81,6 +81,12 @@ def login():
     session["user_id"] = user["id"]
     session["cuil"] = user["cuil"]
     session["nombre"] = user.get("nombre", "").strip()
+    session["cuit_emisor"] = user.get("cuit_emisor", "").strip()
+    session["nombre_emisor"] = user.get("nombre_emisor", "").strip()
+    session["cond_iva"] = user.get("cond_iva", "Responsable Inscripto").strip()
+    session["domicilio"] = user.get("domicilio", "").strip()
+    session["pto_vta"] = user.get("pto_vta", 1)
+    session["es_admin"] = user.get("es_admin", 0)
     return redirect("/")
 
 
@@ -118,8 +124,11 @@ def ultimo_comprobante():
     """Consulta el último comprobante autorizado para un punto de venta y tipo."""
     pto_vta = request.args.get("pto_vta", 1, type=int)
     tipo_cmp = request.args.get("tipo_cmp", 1, type=int)
+    cuit_emisor = session.get("cuit_emisor", "")
+    cert_path = f"certs/{cuit_emisor}/certificado.crt" if cuit_emisor else None
+    key_path = f"certs/{cuit_emisor}/privada.key" if cuit_emisor else None
     try:
-        ultimo = fe_comp_ultimo_autorizado(pto_vta, tipo_cmp)
+        ultimo = fe_comp_ultimo_autorizado(pto_vta, tipo_cmp, cuit=int(cuit_emisor) if cuit_emisor else None, cert_path=cert_path, key_path=key_path)
         return jsonify({"ok": True, "ultimo": ultimo, "siguiente": ultimo + 1})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -152,8 +161,13 @@ def solicitar_cae():
     fecha = datetime.date.today().strftime("%Y%m%d")
 
     # Obtener siguiente número
+    cuit_emisor = session.get("cuit_emisor", "")
+    cert_path = f"certs/{cuit_emisor}/certificado.crt" if cuit_emisor else None
+    key_path = f"certs/{cuit_emisor}/privada.key" if cuit_emisor else None
+    cuit_int = int(cuit_emisor) if cuit_emisor else None
+
     try:
-        ultimo = fe_comp_ultimo_autorizado(pto_vta, tipo_cmp)
+        ultimo = fe_comp_ultimo_autorizado(pto_vta, tipo_cmp, cuit=cuit_int, cert_path=cert_path, key_path=key_path)
         nro_cmp = ultimo + 1
     except Exception as e:
         return jsonify({"error": f"Error al consultar último comprobante: {e}"}), 500
@@ -196,7 +210,7 @@ def solicitar_cae():
 
     # Solicitar CAE
     try:
-        resultado = fe_cae_solicitar(datos_wsfe)
+        resultado = fe_cae_solicitar(datos_wsfe, cuit=cuit_int, cert_path=cert_path, key_path=key_path)
     except Exception as e:
         return jsonify({"error": f"Error de comunicación con ARCA: {e}"}), 500
 
@@ -207,17 +221,16 @@ def solicitar_cae():
     cae_vto = resultado["cae_vto"]
 
     # Generar PDF
-    cuit_emisor = os.getenv("AFIP_CUIT", "20237241275")
     datos_pdf = {
         "tipo_cmp": tipo_cmp,
         "tipo_cmp_nombre": TIPOS_COMPROBANTE.get(tipo_cmp, "COMPROBANTE"),
         "pto_vta": pto_vta,
         "nro_cmp": nro_cmp,
         "fecha": fecha,
-        "cuit_emisor": cuit_emisor,
-        "nombre_emisor": data.get("nombre_emisor", "FLORES SERGIO"),
-        "domicilio_emisor": data.get("domicilio_emisor", ""),
-        "cond_iva_emisor": data.get("cond_iva_emisor", "Responsable Inscripto"),
+        "cuit_emisor": cuit_emisor or os.getenv("AFIP_CUIT", "20237241275"),
+        "nombre_emisor": session.get("nombre_emisor", ""),
+        "domicilio_emisor": session.get("domicilio", ""),
+        "cond_iva_emisor": session.get("cond_iva", "Responsable Inscripto"),
         "doc_tipo": doc_tipo,
         "doc_nro": doc_nro,
         "nombre_receptor": data.get("nombre_receptor", ""),

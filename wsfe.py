@@ -99,14 +99,18 @@ def _login_wsaa(cert_path, key_path):
     return token, sign, expira
 
 
-def obtener_credenciales():
+def obtener_credenciales(cert_path=None, key_path=None):
     """Obtiene token/sign, usando cache si no expiró."""
     global _token_cache
 
-    cert_path = os.getenv("AFIP_CERT", "certs/certificado.crt")
-    key_path = os.getenv("AFIP_KEY", "certs/privada.key")
+    if not cert_path:
+        cert_path = os.getenv("AFIP_CERT", "certs/certificado.crt")
+    if not key_path:
+        key_path = os.getenv("AFIP_KEY", "certs/privada.key")
 
-    if _token_cache["token"] and _token_cache["expira"]:
+    # Cache key basado en el certificado
+    cache_key = cert_path
+    if _token_cache.get("cert") == cache_key and _token_cache["token"] and _token_cache["expira"]:
         try:
             expira = datetime.datetime.fromisoformat(_token_cache["expira"].replace("Z", "+00:00"))
             if datetime.datetime.now(datetime.timezone.utc) < expira - datetime.timedelta(minutes=2):
@@ -115,14 +119,15 @@ def obtener_credenciales():
             pass
 
     token, sign, expira = _login_wsaa(cert_path, key_path)
-    _token_cache = {"token": token, "sign": sign, "expira": expira}
+    _token_cache = {"token": token, "sign": sign, "expira": expira, "cert": cache_key}
     return token, sign
 
 
-def _soap_call(method, body_content):
+def _soap_call(method, body_content, cuit=None, cert_path=None, key_path=None):
     """Ejecuta una llamada SOAP al WSFEv1."""
-    cuit = int(os.getenv("AFIP_CUIT", "20237241275"))
-    token, sign = obtener_credenciales()
+    if not cuit:
+        cuit = int(os.getenv("AFIP_CUIT", "20237241275"))
+    token, sign = obtener_credenciales(cert_path, key_path)
 
     soap = f"""<?xml version="1.0" encoding="UTF-8"?>
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
@@ -160,13 +165,13 @@ def _soap_call(method, body_content):
                 raise Exception(f"WSFEv1 no responde después de {max_intentos} intentos: {e}")
 
 
-def fe_comp_ultimo_autorizado(pto_vta, tipo_cmp):
+def fe_comp_ultimo_autorizado(pto_vta, tipo_cmp, cuit=None, cert_path=None, key_path=None):
     """Obtiene el último número de comprobante autorizado."""
     body = f"""
         <ar:PtoVta>{pto_vta}</ar:PtoVta>
         <ar:CbteTipo>{tipo_cmp}</ar:CbteTipo>
     """
-    tree = _soap_call("FECompUltimoAutorizado", body)
+    tree = _soap_call("FECompUltimoAutorizado", body, cuit=cuit, cert_path=cert_path, key_path=key_path)
     nro = tree.find(".//{http://ar.gov.afip.dif.FEV1/}CbteNro")
     if nro is not None:
         return int(nro.text)
@@ -175,7 +180,7 @@ def fe_comp_ultimo_autorizado(pto_vta, tipo_cmp):
     raise Exception(f"Error al consultar último comprobante: {err.text if err is not None else 'desconocido'}")
 
 
-def fe_cae_solicitar(datos):
+def fe_cae_solicitar(datos, cuit=None, cert_path=None, key_path=None):
     """
     Solicita CAE para un comprobante.
     
@@ -252,7 +257,7 @@ def fe_cae_solicitar(datos):
         </ar:FeCAEReq>
     """
 
-    tree = _soap_call("FECAESolicitar", body)
+    tree = _soap_call("FECAESolicitar", body, cuit=cuit, cert_path=cert_path, key_path=key_path)
     ns = "{http://ar.gov.afip.dif.FEV1/}"
 
     # Parsear respuesta
