@@ -5,21 +5,34 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-list"></i> Últimos comprobantes</h3>
+        <h3 class="card-title"><i class="fas fa-list"></i> Comprobantes emitidos</h3>
+        <div class="card-tools">
+            <form method="GET" action="/emitidas" class="input-group input-group-sm" style="width:300px;">
+                <input type="text" name="q" class="form-control" placeholder="Buscar..." value="{{ buscar }}">
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
+                </div>
+                {% if buscar %}
+                <div class="input-group-append">
+                    <a href="/emitidas" class="btn btn-default"><i class="fas fa-times"></i></a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
     </div>
     <div class="card-body table-responsive p-0">
         {% if registros %}
-        <table class="table table-hover table-striped text-nowrap">
+        <table class="table table-hover table-striped text-nowrap" id="tabla-emitidas">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Tipo</th>
-                    <th>Pto. Vta</th>
-                    <th>Nro.</th>
-                    <th>Fecha</th>
-                    <th>Receptor</th>
-                    <th>Total</th>
-                    <th>CAE</th>
+                    <th class="sortable" data-col="0" data-type="num"># <i class="fas fa-sort fa-xs text-muted"></i></th>
+                    <th class="sortable" data-col="1" data-type="str">Tipo <i class="fas fa-sort fa-xs text-muted"></i></th>
+                    <th class="sortable" data-col="2" data-type="num">Pto. Vta <i class="fas fa-sort fa-xs text-muted"></i></th>
+                    <th class="sortable" data-col="3" data-type="num">Nro. <i class="fas fa-sort fa-xs text-muted"></i></th>
+                    <th class="sortable" data-col="4" data-type="str">Fecha <i class="fas fa-sort fa-xs text-muted"></i></th>
+                    <th class="sortable" data-col="5" data-type="str">Receptor <i class="fas fa-sort fa-xs text-muted"></i></th>
+                    <th class="sortable" data-col="6" data-type="num">Total <i class="fas fa-sort fa-xs text-muted"></i></th>
+                    <th class="sortable" data-col="7" data-type="str">CAE <i class="fas fa-sort fa-xs text-muted"></i></th>
                     <th>Resultado</th>
                     <th>PDF</th>
                 </tr>
@@ -54,9 +67,82 @@
         {% else %}
         <div class="p-4 text-center text-muted">
             <i class="fas fa-file-invoice fa-3x mb-3"></i>
-            <p>No hay comprobantes emitidos todavía.</p>
+            <p>{% if buscar %}No se encontraron comprobantes para "{{ buscar }}".{% else %}No hay comprobantes emitidos todavía.{% endif %}</p>
         </div>
         {% endif %}
     </div>
+    {% if total_pages > 1 %}
+    <div class="card-footer clearfix">
+        <span class="float-left text-muted" style="line-height:38px;">{{ total }} registro{{ 's' if total != 1 }}</span>
+        <ul class="pagination pagination-sm m-0 float-right">
+            <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                <a class="page-link" href="/emitidas?page={{ page - 1 }}&per_page={{ per_page }}{% if buscar %}&q={{ buscar }}{% endif %}">«</a>
+            </li>
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                <li class="page-item active"><a class="page-link" href="#">{{ p }}</a></li>
+                {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                <li class="page-item"><a class="page-link" href="/emitidas?page={{ p }}&per_page={{ per_page }}{% if buscar %}&q={{ buscar }}{% endif %}">{{ p }}</a></li>
+                {% elif p == page - 3 or p == page + 3 %}
+                <li class="page-item disabled"><a class="page-link">…</a></li>
+                {% endif %}
+            {% endfor %}
+            <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                <a class="page-link" href="/emitidas?page={{ page + 1 }}&per_page={{ per_page }}{% if buscar %}&q={{ buscar }}{% endif %}">»</a>
+            </li>
+        </ul>
+    </div>
+    {% else %}
+    <div class="card-footer">
+        <span class="text-muted">{{ total }} registro{{ 's' if total != 1 }}</span>
+    </div>
+    {% endif %}
 </div>
+
+{% block extra_scripts %}
+<script>
+    let sortCol = -1;
+    let sortAsc = true;
+
+    document.querySelectorAll("th.sortable").forEach(th => {
+        th.style.cursor = "pointer";
+        th.addEventListener("click", () => {
+            const col  = parseInt(th.dataset.col);
+            const type = th.dataset.type;
+
+            if (sortCol === col) {
+                sortAsc = !sortAsc;
+            } else {
+                sortCol = col;
+                sortAsc = true;
+            }
+
+            document.querySelectorAll("th.sortable i").forEach(i => {
+                i.className = "fas fa-sort fa-xs text-muted";
+            });
+            th.querySelector("i").className = sortAsc ? "fas fa-sort-up fa-xs text-primary" : "fas fa-sort-down fa-xs text-primary";
+
+            const tbody = document.querySelector("#tabla-emitidas tbody");
+            const rows  = Array.from(tbody.querySelectorAll("tr"));
+
+            rows.sort((a, b) => {
+                let valA = a.cells[col].textContent.trim();
+                let valB = b.cells[col].textContent.trim();
+
+                if (type === "num") {
+                    valA = parseFloat(valA.replace(/[^0-9.\-]/g, "")) || 0;
+                    valB = parseFloat(valB.replace(/[^0-9.\-]/g, "")) || 0;
+                    return sortAsc ? valA - valB : valB - valA;
+                } else {
+                    return sortAsc
+                        ? valA.localeCompare(valB, "es")
+                        : valB.localeCompare(valA, "es");
+                }
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        });
+    });
+</script>
+{% endblock %}
 {% endblock %}

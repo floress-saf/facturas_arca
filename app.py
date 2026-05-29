@@ -294,18 +294,44 @@ def solicitar_cae():
 @app.route("/emitidas")
 @login_required
 def emitidas():
+    page     = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 25, type=int)
+    buscar   = request.args.get("q", "").strip()
+
+    per_page = min(max(per_page, 10), 100)
+    page     = max(page, 1)
+    offset   = (page - 1) * per_page
+
     registros = []
+    total = 0
     try:
         conn = get_conexion()
         cur = conn.cursor(dictionary=True)
-        cur.execute("""
-            SELECT * FROM factura_emitida ORDER BY id DESC LIMIT 100
-        """)
+
+        if buscar:
+            like = f"%{buscar}%"
+            filtro = """WHERE nombre_receptor LIKE %s OR cae LIKE %s OR doc_nro LIKE %s
+                        OR fecha LIKE %s OR nro_cmp LIKE %s"""
+            params = (like, like, like, like, like)
+            cur.execute(f"SELECT COUNT(*) as total FROM factura_emitida {filtro}", params)
+            total = cur.fetchone()["total"]
+            cur.execute(f"SELECT * FROM factura_emitida {filtro} ORDER BY id DESC LIMIT %s OFFSET %s", params + (per_page, offset))
+        else:
+            cur.execute("SELECT COUNT(*) as total FROM factura_emitida")
+            total = cur.fetchone()["total"]
+            cur.execute("SELECT * FROM factura_emitida ORDER BY id DESC LIMIT %s OFFSET %s", (per_page, offset))
+
         registros = cur.fetchall()
         cur.close(); conn.close()
     except Exception:
         pass
-    return render_template("emitidas.html", registros=registros, tipos=TIPOS_COMPROBANTE)
+
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    page = min(page, total_pages)
+
+    return render_template("emitidas.html", registros=registros, tipos=TIPOS_COMPROBANTE,
+                           page=page, per_page=per_page, total=total,
+                           total_pages=total_pages, buscar=buscar)
 
 
 @app.route("/emitidas/pdf/<int:tipo>/<int:pto_vta>/<int:nro_cmp>")
