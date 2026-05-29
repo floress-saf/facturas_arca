@@ -51,6 +51,18 @@ def login_required(f):
     return decorated
 
 
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect("/login")
+        if not session.get("es_admin"):
+            return "Acceso denegado", 403
+        return f(*args, **kwargs)
+    return decorated
+    return decorated
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "GET":
@@ -305,6 +317,142 @@ def descargar_pdf(tipo, pto_vta, nro_cmp):
         return jsonify({"error": "PDF no encontrado."}), 404
     return send_file(pdf_path, mimetype="application/pdf", as_attachment=False,
                      download_name=pdf_filename)
+
+
+# --- CRUD Usuarios (solo admin) ---
+@app.route("/usuarios")
+@admin_required
+def listar_usuarios():
+    usuarios = []
+    try:
+        conn = get_conexion()
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT * FROM usuarios ORDER BY nombre")
+        usuarios = cur.fetchall()
+        cur.close(); conn.close()
+    except Exception:
+        pass
+    return render_template("usuarios.html", usuarios=usuarios)
+
+
+@app.route("/usuarios/nuevo", methods=["GET", "POST"])
+@admin_required
+def nuevo_usuario():
+    if request.method == "GET":
+        return render_template("usuario_form.html", usuario=None)
+
+    data = request.form
+    cuil = data.get("cuil", "").strip()
+    nombre = data.get("nombre", "").strip()
+    password = data.get("password", "").strip()
+    cuit_emisor = data.get("cuit_emisor", "").strip()
+    nombre_emisor = data.get("nombre_emisor", "").strip()
+    cond_iva = data.get("cond_iva", "Responsable Inscripto")
+    domicilio = data.get("domicilio", "").strip()
+    pto_vta = int(data.get("pto_vta", 1))
+    es_admin = 1 if data.get("es_admin") else 0
+
+    if not cuil or not nombre or not password:
+        return render_template("usuario_form.html", usuario=None, error="CUIL, nombre y contraseña son obligatorios.")
+
+    password_md5 = hashlib.md5(password.encode()).hexdigest()
+
+    try:
+        conn = get_conexion()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO usuarios (cuil, nombre, password, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (cuil, nombre, password_md5, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception as e:
+        return render_template("usuario_form.html", usuario=None, error=f"Error: {e}")
+
+    # Guardar certificados si se subieron
+    _guardar_certificados(cuit_emisor, request.files)
+
+    return redirect("/usuarios")
+
+
+@app.route("/usuarios/editar/<int:id>", methods=["GET", "POST"])
+@admin_required
+def editar_usuario(id):
+    conn = get_conexion()
+    cur = conn.cursor(dictionary=True)
+
+    if request.method == "GET":
+        cur.execute("SELECT * FROM usuarios WHERE id = %s", (id,))
+        usuario = cur.fetchone()
+        cur.close(); conn.close()
+        if not usuario:
+            return redirect("/usuarios")
+        return render_template("usuario_form.html", usuario=usuario)
+
+    data = request.form
+    nombre = data.get("nombre", "").strip()
+    cuit_emisor = data.get("cuit_emisor", "").strip()
+    nombre_emisor = data.get("nombre_emisor", "").strip()
+    cond_iva = data.get("cond_iva", "Responsable Inscripto")
+    domicilio = data.get("domicilio", "").strip()
+    pto_vta = int(data.get("pto_vta", 1))
+    es_admin = 1 if data.get("es_admin") else 0
+    password = data.get("password", "").strip()
+
+    try:
+        if password:
+            password_md5 = hashlib.md5(password.encode()).hexdigest()
+            cur.execute("""
+                UPDATE usuarios SET nombre=%s, password=%s, cuit_emisor=%s, nombre_emisor=%s,
+                    cond_iva=%s, domicilio=%s, pto_vta=%s, es_admin=%s WHERE id=%s
+            """, (nombre, password_md5, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin, id))
+        else:
+            cur.execute("""
+                UPDATE usuarios SET nombre=%s, cuit_emisor=%s, nombre_emisor=%s,
+                    cond_iva=%s, domicilio=%s, pto_vta=%s, es_admin=%s WHERE id=%s
+            """, (nombre, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin, id))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception as e:
+        cur.close(); conn.close()
+        return render_template("usuario_form.html", usuario=data, error=f"Error: {e}")
+
+    # Guardar certificados si se subieron
+    _guardar_certificados(cuit_emisor, request.files)
+
+    return redirect("/usuarios")
+
+
+@app.route("/usuarios/eliminar/<int:id>", methods=["POST"])
+@admin_required
+def eliminar_usuario(id):
+    try:
+        conn = get_conexion()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM usuarios WHERE id = %s AND es_admin = 0", (id,))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception:
+        pass
+    return redirect("/usuarios")
+
+
+def _guardar_certificados(cuit_emisor, files):
+    """Guarda los archivos de certificado y clave privada en certs/{cuit}/"""
+    if not cuit_emisor:
+        return
+    cert_file = files.get("certificado")
+    key_file = files.get("clave_privada")
+
+    if (cert_file and cert_file.filename) or (key_file and key_file.filename):
+        cert_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certs", cuit_emisor)
+        os.makedirs(cert_dir, exist_ok=True)
+
+        if cert_file and cert_file.filename:
+            cert_file.save(os.path.join(cert_dir, "certificado.crt"))
+
+        if key_file and key_file.filename:
+            key_file.save(os.path.join(cert_dir, "privada.key"))
 
 
 if __name__ == "__main__":

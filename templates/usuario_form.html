@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if usuario else "Nuevo" }} usuario · Admin{% endblock %}
+{% block page_title %}{{ "Editar" if usuario else "Nuevo" }} usuario{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-user-edit"></i> Datos del usuario</h3>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>CUIL (login)</label>
+                                <input type="text" class="form-control" name="cuil" value="{{ usuario.cuil if usuario else '' }}" maxlength="11" required {{ 'readonly' if usuario }}>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Nombre</label>
+                                <input type="text" class="form-control" name="nombre" value="{{ usuario.nombre if usuario else '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Contraseña {{ "(dejar vacío para no cambiar)" if usuario else "" }}</label>
+                                <input type="password" class="form-control" name="password" {{ '' if usuario else 'required' }}>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h5>Datos de facturación</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>CUIT Emisor</label>
+                                <input type="text" class="form-control" name="cuit_emisor" value="{{ usuario.cuit_emisor if usuario else '' }}" maxlength="11">
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label>Razón Social / Nombre Emisor</label>
+                                <input type="text" class="form-control" name="nombre_emisor" value="{{ usuario.nombre_emisor if usuario else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Pto. Venta</label>
+                                <input type="number" class="form-control" name="pto_vta" value="{{ usuario.pto_vta if usuario else 1 }}" min="1">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Admin</label>
+                                <div class="form-check mt-2">
+                                    <input type="checkbox" class="form-check-input" name="es_admin" {{ 'checked' if usuario and usuario.es_admin }}>
+                                    <label class="form-check-label">Sí</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Condición IVA</label>
+                                <select class="form-control" name="cond_iva">
+                                    <option value="Responsable Inscripto" {{ 'selected' if usuario and usuario.cond_iva == 'Responsable Inscripto' }}>Responsable Inscripto</option>
+                                    <option value="Monotributista" {{ 'selected' if usuario and usuario.cond_iva == 'Monotributista' }}>Monotributista</option>
+                                    <option value="Exento" {{ 'selected' if usuario and usuario.cond_iva == 'Exento' }}>Exento</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label>Domicilio</label>
+                                <input type="text" class="form-control" name="domicilio" value="{{ usuario.domicilio if usuario else '' }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h5>Certificados digitales (ARCA)</h5>
+                    <p class="text-muted small">Subí el certificado (.crt) y la clave privada (.key) del CUIT emisor. Se guardan en <code>certs/{cuit_emisor}/</code></p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Certificado (.crt)</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" name="certificado" accept=".crt,.pem"
+                                           onchange="this.nextElementSibling.textContent = this.files[0] ? this.files[0].name : 'Seleccionar...'">
+                                    <label class="custom-file-label">Seleccionar...</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Clave privada (.key)</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" name="clave_privada" accept=".key,.pem"
+                                           onchange="this.nextElementSibling.textContent = this.files[0] ? this.files[0].name : 'Seleccionar...'">
+                                    <label class="custom-file-label">Seleccionar...</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                    <a href="/usuarios" class="btn btn-default ml-2">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

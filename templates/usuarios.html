@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Usuarios · Admin{% endblock %}
+{% block page_title %}Administración de usuarios{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-users"></i> Usuarios registrados</h3>
+        <div class="card-tools">
+            <a href="/usuarios/nuevo" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i> Nuevo usuario</a>
+        </div>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if usuarios %}
+        <table class="table table-hover table-striped text-nowrap">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>CUIL</th>
+                    <th>Nombre</th>
+                    <th>CUIT Emisor</th>
+                    <th>Razón Social</th>
+                    <th>Pto. Vta</th>
+                    <th>Admin</th>
+                    <th>Certificado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td>{{ u.cuil }}</td>
+                    <td>{{ u.nombre }}</td>
+                    <td>{{ u.cuit_emisor }}</td>
+                    <td>{{ u.nombre_emisor }}</td>
+                    <td>{{ u.pto_vta }}</td>
+                    <td>
+                        {% if u.es_admin %}
+                        <span class="badge badge-warning">Admin</span>
+                        {% else %}
+                        <span class="badge badge-secondary">Usuario</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.cuit_emisor %}
+                            {% set cert_exists = "certs/" ~ u.cuit_emisor ~ "/certificado.crt" %}
+                            <span class="text-success"><i class="fas fa-certificate"></i></span>
+                        {% else %}
+                            <span class="text-danger"><i class="fas fa-times-circle"></i></span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/usuarios/editar/{{ u.id }}" class="btn btn-xs btn-outline-primary" title="Editar"><i class="fas fa-edit"></i></a>
+                        {% if not u.es_admin %}
+                        <form action="/usuarios/eliminar/{{ u.id }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar este usuario?')">
+                            <button type="submit" class="btn btn-xs btn-outline-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-4 text-center text-muted">
+            <p>No hay usuarios registrados.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
