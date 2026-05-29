@@ -17,7 +17,7 @@
                                 <label>Tipo de comprobante</label>
                                 <select class="form-control" id="tipo_cmp" required onchange="consultarUltimo()">
                                     {% for id, nombre in tipos.items() %}
-                                    <option value="{{ id }}">{{ nombre }} ({{ id }})</option>
+                                    <option value="{{ id }}" {% if id == 6 %}selected{% endif %}>{{ nombre }} ({{ id }})</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -38,8 +38,8 @@
                             <div class="form-group">
                                 <label>Concepto</label>
                                 <select class="form-control" id="concepto">
-                                    <option value="1">Productos</option>
-                                    <option value="2" selected>Servicios</option>
+                                    <option value="1" selected>Indumentaria Varias</option>
+                                    <option value="2">Servicios</option>
                                     <option value="3">Productos y Servicios</option>
                                 </select>
                             </div>
@@ -55,14 +55,14 @@
                                 <select class="form-control" id="doc_tipo">
                                     <option value="80">CUIT</option>
                                     <option value="96">DNI</option>
-                                    <option value="99">Cons. Final</option>
+                                    <option value="99" selected>Cons. Final</option>
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label>Nro. Documento</label>
-                                <input type="text" class="form-control" id="doc_nro" maxlength="11" required>
+                                <input type="text" class="form-control" id="doc_nro" maxlength="11" required value="0">
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -78,7 +78,7 @@
                                     <option value="Responsable Inscripto">Resp. Inscripto</option>
                                     <option value="Monotributista">Monotributista</option>
                                     <option value="Exento">Exento</option>
-                                    <option value="Consumidor Final">Consumidor Final</option>
+                                    <option value="Consumidor Final" selected>Consumidor Final</option>
                                 </select>
                             </div>
                         </div>
