@@ -12,10 +12,10 @@
             <div class="card-body">
                 <form id="form-emitir">
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label>Tipo</label>
-                                <select class="form-control" id="tipo_cmp" required onchange="consultarUltimo()">
+                                <label>Tipo de comprobante</label>
+                                <select class="form-control" id="tipo_cmp" required onchange="consultarUltimo()" style="max-width:60%;">
                                     {% for id, nombre in tipos.items() %}
                                     <option value="{{ id }}" {% if id == 6 %}selected{% endif %}>{{ nombre }} ({{ id }})</option>
                                     {% endfor %}
@@ -24,13 +24,13 @@
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
-                                <label>Pto. Vta</label>
+                                <label>Punto de venta</label>
                                 <input type="number" class="form-control" id="pto_vta" value="1" min="1" max="99999" required onchange="consultarUltimo()">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label>Nro.</label>
+                                <label>Próximo Nro.</label>
                                 <input type="text" class="form-control" id="nro_cmp" readonly>
                             </div>
                         </div>
