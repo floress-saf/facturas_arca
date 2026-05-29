@@ -45,15 +45,30 @@ def crear_tabla_emitidas():
             UNIQUE KEY uq_comprobante (tipo_cmp, pto_vta, nro_cmp)
         )
     """
+    sql_usuarios = """
+        CREATE TABLE IF NOT EXISTS usuariosarca (
+            id          INT AUTO_INCREMENT PRIMARY KEY,
+            cuil        VARCHAR(11) UNIQUE NOT NULL,
+            nombre      VARCHAR(20) NOT NULL,
+            password    VARCHAR(32) NOT NULL,
+            cuit_emisor VARCHAR(11) DEFAULT '',
+            nombre_emisor VARCHAR(100) DEFAULT '',
+            cond_iva    VARCHAR(30) DEFAULT 'Responsable Inscripto',
+            domicilio   VARCHAR(200) DEFAULT '',
+            pto_vta     INT DEFAULT 1,
+            es_admin    TINYINT(1) DEFAULT 0
+        )
+    """
     try:
         conn = get_conexion()
         cur = conn.cursor()
         cur.execute(sql)
+        cur.execute(sql_usuarios)
         conn.commit()
         cur.close(); conn.close()
-        log.info("Tabla 'factura_emitida' verificada/creada.")
+        log.info("Tablas 'factura_emitida' y 'usuariosarca' verificadas/creadas.")
     except mysql.connector.Error as e:
-        log.error(f"Error al crear tabla factura_emitida: {e}")
+        log.error(f"Error al crear tablas: {e}")
 
 
 def insertar_factura_emitida(datos):
