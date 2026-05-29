@@ -81,7 +81,7 @@ def login():
     try:
         conn = get_conexion()
         cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT * FROM usuarios WHERE cuil = %s AND password = %s", (cuil, password_md5))
+        cur.execute("SELECT * FROM usuariosarca WHERE cuil = %s AND password = %s", (cuil, password_md5))
         user = cur.fetchone()
         cur.close(); conn.close()
     except Exception:
@@ -353,7 +353,7 @@ def listar_usuarios():
     try:
         conn = get_conexion()
         cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT * FROM usuarios ORDER BY nombre")
+        cur.execute("SELECT * FROM usuariosarca ORDER BY nombre")
         usuarios = cur.fetchall()
         cur.close(); conn.close()
     except Exception:
@@ -387,7 +387,7 @@ def nuevo_usuario():
         conn = get_conexion()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO usuarios (cuil, nombre, password, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin)
+            INSERT INTO usuariosarca (cuil, nombre, password, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (cuil, nombre, password_md5, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin))
         conn.commit()
@@ -408,7 +408,7 @@ def editar_usuario(id):
     cur = conn.cursor(dictionary=True)
 
     if request.method == "GET":
-        cur.execute("SELECT * FROM usuarios WHERE id = %s", (id,))
+        cur.execute("SELECT * FROM usuariosarca WHERE id = %s", (id,))
         usuario = cur.fetchone()
         cur.close(); conn.close()
         if not usuario:
@@ -429,12 +429,12 @@ def editar_usuario(id):
         if password:
             password_md5 = hashlib.md5(password.encode()).hexdigest()
             cur.execute("""
-                UPDATE usuarios SET nombre=%s, password=%s, cuit_emisor=%s, nombre_emisor=%s,
+                UPDATE usuariosarca SET nombre=%s, password=%s, cuit_emisor=%s, nombre_emisor=%s,
                     cond_iva=%s, domicilio=%s, pto_vta=%s, es_admin=%s WHERE id=%s
             """, (nombre, password_md5, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin, id))
         else:
             cur.execute("""
-                UPDATE usuarios SET nombre=%s, cuit_emisor=%s, nombre_emisor=%s,
+                UPDATE usuariosarca SET nombre=%s, cuit_emisor=%s, nombre_emisor=%s,
                     cond_iva=%s, domicilio=%s, pto_vta=%s, es_admin=%s WHERE id=%s
             """, (nombre, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin, id))
         conn.commit()
@@ -455,7 +455,7 @@ def eliminar_usuario(id):
     try:
         conn = get_conexion()
         cur = conn.cursor()
-        cur.execute("DELETE FROM usuarios WHERE id = %s AND es_admin = 0", (id,))
+        cur.execute("DELETE FROM usuariosarca WHERE id = %s AND es_admin = 0", (id,))
         conn.commit()
         cur.close(); conn.close()
     except Exception:
