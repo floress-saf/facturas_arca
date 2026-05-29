@@ -12,35 +12,44 @@
             <div class="card-body">
                 <form id="form-emitir">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col">
                             <div class="form-group">
                                 <label>Tipo de comprobante</label>
-                                <select class="form-control" id="tipo_cmp" required onchange="consultarUltimo()" style="max-width:60%;">
+                                <select class="form-control" id="tipo_cmp" required onchange="consultarUltimo()">
                                     {% for id, nombre in tipos.items() %}
                                     <option value="{{ id }}" {% if id == 6 %}selected{% endif %}>{{ nombre }} ({{ id }})</option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col">
                             <div class="form-group">
                                 <label>Punto de venta</label>
                                 <input type="number" class="form-control" id="pto_vta" value="1" min="1" max="99999" required onchange="consultarUltimo()">
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col">
                             <div class="form-group">
                                 <label>Próximo Nro.</label>
                                 <input type="text" class="form-control" id="nro_cmp" readonly>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col">
                             <div class="form-group">
                                 <label>Concepto</label>
                                 <select class="form-control" id="concepto">
                                     <option value="1" selected>Indumentaria Varias</option>
                                     <option value="2">Servicios</option>
                                     <option value="3">Productos y Servicios</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label>Moneda</label>
+                                <select class="form-control" id="moneda">
+                                    <option value="PES">ARS</option>
+                                    <option value="DOL">USD</option>
                                 </select>
                             </div>
                         </div>
@@ -119,18 +128,6 @@
                             <div class="form-group">
                                 <label><b>TOTAL</b></label>
                                 <input type="number" class="form-control font-weight-bold" id="importe_total" step="0.01" min="0" required onchange="calcularDesdeTotal()">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Moneda</label>
-                                <select class="form-control" id="moneda">
-                                    <option value="PES">ARS</option>
-                                    <option value="DOL">USD</option>
-                                </select>
                             </div>
                         </div>
                     </div>
