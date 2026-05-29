@@ -14,8 +14,8 @@ venv/
 uploads/
 facturas_generadas/
 
-# Certificados
-certs/
+# Certificados (incluidos porque el repo es privado)
+# certs/
 
 # OS
 Thumbs.db
