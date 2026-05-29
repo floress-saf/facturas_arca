@@ -90,13 +90,13 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label>Importe Neto</label>
-                                <input type="number" class="form-control" id="importe_neto" step="0.01" min="0" required onchange="calcularTotal()">
+                                <input type="number" class="form-control" id="importe_neto" step="0.01" min="0" readonly>
                             </div>
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Alícuota IVA</label>
-                                <select class="form-control" id="iva_id" onchange="calcularTotal()">
+                                <select class="form-control" id="iva_id" onchange="calcularDesdeTotal()">
                                     {% for id, data in alicuotas.items() %}
                                     <option value="{{ id }}" data-porcentaje="{{ data.porcentaje }}" {% if id == 5 %}selected{% endif %}>{{ data.desc }}</option>
                                     {% endfor %}
@@ -112,13 +112,13 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Exento</label>
-                                <input type="number" class="form-control" id="importe_exento" step="0.01" value="0" onchange="calcularTotal()">
+                                <input type="number" class="form-control" id="importe_exento" step="0.01" value="0" onchange="calcularDesdeTotal()">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label><b>TOTAL</b></label>
-                                <input type="number" class="form-control font-weight-bold" id="importe_total" step="0.01" readonly>
+                                <input type="number" class="form-control font-weight-bold" id="importe_total" step="0.01" min="0" required onchange="calcularDesdeTotal()">
                             </div>
                         </div>
                     </div>
@@ -167,14 +167,18 @@
         }
     }
 
-    function calcularTotal() {
-        const neto = parseFloat(document.getElementById("importe_neto").value) || 0;
+    function calcularDesdeTotal() {
+        const total = parseFloat(document.getElementById("importe_total").value) || 0;
         const exento = parseFloat(document.getElementById("importe_exento").value) || 0;
         const select = document.getElementById("iva_id");
         const porcentaje = parseFloat(select.options[select.selectedIndex].dataset.porcentaje) || 0;
-        const iva = neto * porcentaje / 100;
+
+        const base = total - exento;
+        const neto = base / (1 + porcentaje / 100);
+        const iva = base - neto;
+
+        document.getElementById("importe_neto").value = neto.toFixed(2);
         document.getElementById("importe_iva").value = iva.toFixed(2);
-        document.getElementById("importe_total").value = (neto + iva + exento).toFixed(2);
     }
 
     async function emitirFactura() {
