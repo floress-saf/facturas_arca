@@ -130,6 +130,12 @@ def emitir():
     return render_template("emitir.html", tipos=TIPOS_COMPROBANTE, alicuotas=ALICUOTAS_IVA)
 
 
+@app.route("/emitir/lote", methods=["GET"])
+@login_required
+def emitir_lote():
+    return render_template("emitir_lote.html", tipos=TIPOS_COMPROBANTE, alicuotas=ALICUOTAS_IVA)
+
+
 @app.route("/emitir/ultimo", methods=["GET"])
 @login_required
 def ultimo_comprobante():

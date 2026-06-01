@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}Emitir Lote · Facturación ARCA{% endblock %}
+{% block page_title %}Emisión en lote{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-copy"></i> Configuración del lote</h3>
+    </div>
+    <div class="card-body">
+        <!-- Fila de configuración -->
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select class="form-control" id="tipo_cmp">
+                        {% for id, nombre in tipos.items() %}
+                        <option value="{{ id }}" {% if id == 6 %}selected{% endif %}>{{ nombre }} ({{ id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Concepto</label>
+                    <select class="form-control" id="concepto">
+                        <option value="1" selected>Productos</option>
+                        <option value="2">Servicios</option>
+                        <option value="3">Productos y Servicios</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Tipo Doc.</label>
+                    <select class="form-control" id="doc_tipo">
+                        <option value="80">CUIT</option>
+                        <option value="96">DNI</option>
+                        <option value="99" selected>Cons. Final</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Cond. IVA</label>
+                    <select class="form-control" id="cond_iva_receptor">
+                        <option value="Responsable Inscripto">Resp. Inscripto</option>
+                        <option value="Monotributista">Monotributista</option>
+                        <option value="Exento">Exento</option>
+                        <option value="Consumidor Final" selected>Consumidor Final</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Alícuota IVA</label>
+                    <select class="form-control" id="iva_id">
+                        {% for id, data in alicuotas.items() %}
+                        <option value="{{ id }}" data-porcentaje="{{ data.porcentaje }}" {% if id == 5 %}selected{% endif %}>{{ data.desc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Cantidad</label>
+                    <input type="number" class="form-control" id="cantidad" value="1" min="1" max="50">
+                </div>
+            </div>
+            <div class="col d-flex align-items-end">
+                <div class="form-group w-100">
+                    <button class="btn btn-info btn-block" onclick="generarFilas()"><i class="fas fa-list-ol"></i> Generar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de facturas a emitir -->
+<div class="card" id="card-lote" style="display:none;">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-file-invoice-dollar"></i> Facturas a emitir</h3>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-bordered" id="tabla-lote">
+            <thead class="thead-light">
+                <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Tipo</th>
+                    <th>Concepto</th>
+                    <th>Doc. Tipo</th>
+                    <th>Doc. Nro</th>
+                    <th>Cond. IVA</th>
+                    <th style="width:130px;">Importe Total</th>
+                    <th>Neto</th>
+                    <th>IVA</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-lote">
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer">
+        <button class="btn btn-primary btn-lg" id="btn-emitir-lote" onclick="emitirLote()">
+            <i class="fas fa-paper-plane"></i> Emitir todas
+        </button>
+        <span id="progreso" class="ml-3"></span>
+    </div>
+</div>
+
+<!-- Resultados -->
+<div id="resultados" class="mt-3"></div>
+
+{% block extra_scripts %}
+<script>
+    const TIPOS = {{ tipos | tojson }};
+
+    function generarFilas() {
+        const cantidad = parseInt(document.getElementById("cantidad").value) || 1;
+        const tipo_cmp = document.getElementById("tipo_cmp").value;
+        const tipo_nombre = TIPOS[tipo_cmp] || tipo_cmp;
+        const concepto = document.getElementById("concepto").selectedOptions[0].text;
+        const concepto_val = document.getElementById("concepto").value;
+        const doc_tipo = document.getElementById("doc_tipo").value;
+        const doc_tipo_nombre = document.getElementById("doc_tipo").selectedOptions[0].text;
+        const cond_iva = document.getElementById("cond_iva_receptor").value;
+        const iva_select = document.getElementById("iva_id");
+        const iva_porcentaje = parseFloat(iva_select.selectedOptions[0].dataset.porcentaje) || 0;
+
+        const tbody = document.getElementById("tbody-lote");
+        tbody.innerHTML = "";
+
+        for (let i = 1; i <= cantidad; i++) {
+            const tr = document.createElement("tr");
+            tr.id = `fila-${i}`;
+            tr.innerHTML = `
+                <td>${i}</td>
+                <td>${tipo_nombre}</td>
+                <td>${concepto}</td>
+                <td>${doc_tipo_nombre}</td>
+                <td><input type="text" class="form-control form-control-sm" value="0" data-field="doc_nro" style="width:110px;"></td>
+                <td>${cond_iva}</td>
+                <td><input type="number" class="form-control form-control-sm importe-total" step="0.01" min="0" placeholder="0.00" data-field="importe_total" data-porcentaje="${iva_porcentaje}" onchange="calcularFila(this)"></td>
+                <td class="neto">0.00</td>
+                <td class="iva">0.00</td>
+                <td class="estado"><span class="badge badge-secondary">Pendiente</span></td>
+            `;
+            // Guardar datos ocultos
+            tr.dataset.tipo_cmp = tipo_cmp;
+            tr.dataset.concepto = concepto_val;
+            tr.dataset.doc_tipo = doc_tipo;
+            tr.dataset.cond_iva = cond_iva;
+            tr.dataset.iva_id = iva_select.value;
+            tbody.appendChild(tr);
+        }
+
+        document.getElementById("card-lote").style.display = "block";
+        document.getElementById("resultados").innerHTML = "";
+    }
+
+    function calcularFila(input) {
+        const tr = input.closest("tr");
+        const total = parseFloat(input.value) || 0;
+        const porcentaje = parseFloat(input.dataset.porcentaje) || 0;
+        const neto = total / (1 + porcentaje / 100);
+        const iva = total - neto;
+        tr.querySelector(".neto").textContent = neto.toFixed(2);
+        tr.querySelector(".iva").textContent = iva.toFixed(2);
+    }
+
+    async function emitirLote() {
+        const filas = document.querySelectorAll("#tbody-lote tr");
+        const btn = document.getElementById("btn-emitir-lote");
+        const progreso = document.getElementById("progreso");
+        btn.disabled = true;
+
+        let exitosas = 0;
+        let fallidas = 0;
+
+        for (let i = 0; i < filas.length; i++) {
+            const tr = filas[i];
+            const total = parseFloat(tr.querySelector(".importe-total").value) || 0;
+            if (total <= 0) {
+                tr.querySelector(".estado").innerHTML = '<span class="badge badge-warning">Sin importe</span>';
+                fallidas++;
+                continue;
+            }
+
+            progreso.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Emitiendo ${i + 1} de ${filas.length}...`;
+            tr.querySelector(".estado").innerHTML = '<span class="badge badge-info"><i class="fas fa-spinner fa-spin"></i></span>';
+
+            const porcentaje = parseFloat(tr.querySelector(".importe-total").dataset.porcentaje) || 0;
+            const neto = total / (1 + porcentaje / 100);
+            const iva = total - neto;
+            const doc_nro = tr.querySelector("[data-field='doc_nro']").value || "0";
+
+            const datos = {
+                tipo_cmp: tr.dataset.tipo_cmp,
+                pto_vta: "1",
+                concepto: tr.dataset.concepto,
+                doc_tipo: tr.dataset.doc_tipo,
+                doc_nro: doc_nro,
+                cond_iva_receptor: tr.dataset.cond_iva,
+                importe_total: total.toFixed(2),
+                importe_neto: neto.toFixed(2),
+                importe_iva: iva.toFixed(2),
+                importe_exento: "0",
+                moneda: "PES",
+                iva_id: tr.dataset.iva_id,
+                nombre_receptor: "",
+            };
+
+            try {
+                const res = await fetch("/emitir/solicitar", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(datos)
+                });
+                const data = await res.json();
+
+                if (data.ok) {
+                    tr.querySelector(".estado").innerHTML = `<span class="badge badge-success">CAE: ${data.cae}</span>`;
+                    exitosas++;
+                } else {
+                    tr.querySelector(".estado").innerHTML = `<span class="badge badge-danger" title="${data.error}">Error</span>`;
+                    fallidas++;
+                }
+            } catch (e) {
+                tr.querySelector(".estado").innerHTML = '<span class="badge badge-danger">Error red</span>';
+                fallidas++;
+            }
+
+            // Esperar 1 segundo entre cada solicitud para no saturar ARCA
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        btn.disabled = false;
+        progreso.innerHTML = `<span class="text-success"><i class="fas fa-check-circle"></i> Completado: ${exitosas} exitosas, ${fallidas} fallidas.</span>`;
+    }
+</script>
+{% endblock %}
+{% endblock %}
