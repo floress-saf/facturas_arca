@@ -8,10 +8,10 @@ import logging
 log = logging.getLogger(__name__)
 
 DB_CONFIG = {
-    "host":     os.getenv("DB_HOST", "localhost"),
-    "user":     os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", "comprobantes"),
+    "host":     os.getenv("DB_HOST", "35.199.84.124"),
+    "user":     os.getenv("DB_USER", "osa_fox"),
+    "password": os.getenv("DB_PASSWORD", "0s@0821"),
+    "database": os.getenv("DB_NAME", "cupones"),
 }
 
 
