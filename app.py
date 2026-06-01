@@ -308,6 +308,10 @@ def emitidas():
     page     = max(page, 1)
     offset   = (page - 1) * per_page
 
+    # Filtro por usuario: admin ve todo, otros solo sus facturas
+    es_admin = session.get("es_admin", 0)
+    cuil = session.get("cuil", "")
+
     registros = []
     total = 0
     try:
@@ -316,16 +320,26 @@ def emitidas():
 
         if buscar:
             like = f"%{buscar}%"
-            filtro = """WHERE nombre_receptor LIKE %s OR cae LIKE %s OR doc_nro LIKE %s
-                        OR fecha LIKE %s OR nro_cmp LIKE %s"""
-            params = (like, like, like, like, like)
+            if es_admin:
+                filtro = """WHERE nombre_receptor LIKE %s OR cae LIKE %s OR doc_nro LIKE %s
+                            OR fecha LIKE %s OR nro_cmp LIKE %s"""
+                params = (like, like, like, like, like)
+            else:
+                filtro = """WHERE usuario = %s AND (nombre_receptor LIKE %s OR cae LIKE %s OR doc_nro LIKE %s
+                            OR fecha LIKE %s OR nro_cmp LIKE %s)"""
+                params = (cuil, like, like, like, like, like)
             cur.execute(f"SELECT COUNT(*) as total FROM factura_emitida {filtro}", params)
             total = cur.fetchone()["total"]
             cur.execute(f"SELECT * FROM factura_emitida {filtro} ORDER BY id DESC LIMIT %s OFFSET %s", params + (per_page, offset))
         else:
-            cur.execute("SELECT COUNT(*) as total FROM factura_emitida")
-            total = cur.fetchone()["total"]
-            cur.execute("SELECT * FROM factura_emitida ORDER BY id DESC LIMIT %s OFFSET %s", (per_page, offset))
+            if es_admin:
+                cur.execute("SELECT COUNT(*) as total FROM factura_emitida")
+                total = cur.fetchone()["total"]
+                cur.execute("SELECT * FROM factura_emitida ORDER BY id DESC LIMIT %s OFFSET %s", (per_page, offset))
+            else:
+                cur.execute("SELECT COUNT(*) as total FROM factura_emitida WHERE usuario = %s", (cuil,))
+                total = cur.fetchone()["total"]
+                cur.execute("SELECT * FROM factura_emitida WHERE usuario = %s ORDER BY id DESC LIMIT %s OFFSET %s", (cuil, per_page, offset))
 
         registros = cur.fetchall()
         cur.close(); conn.close()
@@ -402,7 +416,9 @@ def nuevo_usuario():
         return render_template("usuario_form.html", usuario=None, error=f"Error: {e}")
 
     # Guardar certificados si se subieron
-    _guardar_certificados(cuit_emisor, request.files)
+    cert_error = _guardar_certificados(cuit_emisor, request.files)
+    if cert_error:
+        return render_template("usuario_form.html", usuario=None, error=f"Usuario creado pero error en certificados: {cert_error}")
 
     return redirect("/usuarios")
 
@@ -470,21 +486,44 @@ def eliminar_usuario(id):
 
 
 def _guardar_certificados(cuit_emisor, files):
-    """Guarda los archivos de certificado y clave privada en certs/{cuit}/"""
+    """Guarda los archivos de certificado y clave privada en certs/{cuit}/ con validación."""
+    from cryptography import x509
+    from cryptography.hazmat.primitives import serialization
+
     if not cuit_emisor:
-        return
+        return None
+
     cert_file = files.get("certificado")
     key_file = files.get("clave_privada")
+    errores = []
 
-    if (cert_file and cert_file.filename) or (key_file and key_file.filename):
-        cert_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certs", cuit_emisor)
-        os.makedirs(cert_dir, exist_ok=True)
+    if not (cert_file and cert_file.filename) and not (key_file and key_file.filename):
+        return None
 
-        if cert_file and cert_file.filename:
-            cert_file.save(os.path.join(cert_dir, "certificado.crt"))
+    cert_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certs", cuit_emisor)
+    os.makedirs(cert_dir, exist_ok=True)
 
-        if key_file and key_file.filename:
-            key_file.save(os.path.join(cert_dir, "privada.key"))
+    # Validar y guardar certificado
+    if cert_file and cert_file.filename:
+        cert_data = cert_file.read()
+        try:
+            x509.load_pem_x509_certificate(cert_data)
+            with open(os.path.join(cert_dir, "certificado.crt"), "wb") as f:
+                f.write(cert_data)
+        except Exception as e:
+            errores.append(f"Certificado inválido: {e}")
+
+    # Validar y guardar clave privada
+    if key_file and key_file.filename:
+        key_data = key_file.read()
+        try:
+            serialization.load_pem_private_key(key_data, password=None)
+            with open(os.path.join(cert_dir, "privada.key"), "wb") as f:
+                f.write(key_data)
+        except Exception as e:
+            errores.append(f"Clave privada inválida: {e}")
+
+    return "; ".join(errores) if errores else None
 
 
 if __name__ == "__main__":
