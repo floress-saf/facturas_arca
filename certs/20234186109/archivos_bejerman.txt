@@ -1,0 +1,29 @@
+CCabecer.TXT
+Pos 1-2: Tipo comprobante (FC ) 2 digitos
+Pos 3-3: Espacio en Blanco 1 digitos
+Pos 4-4: Letra (A/B/C) 1 digitos
+Pos 5-9: Punto de venta (5 dígitos, zero-padded)
+Pos 10-17: Nro comprobante (8 dígitos, zero-padded)
+Pos 18-33: Sin espacios + fecha emisión (YYYYMMDD) 16 digitos
+Pos 34-39: @@@#@@ 6 espacios
+Pos 40-85: Espacios
+Pos 86-96: CUIT receptor (11 dígitos)
+Pos 97-119: Espacios
+Pos 120-122: 002
+Pos 123-150: Espacios + fecha vencimiento (YYYYMMDD)
+
+
+CItems.TXT
+
+Pos 1-2: Tipo comprobante (FC ) 2 digitos
+Pos 3-3: Espacio en Blanco 1 digitos
+Pos 4-4: Letra (A/B/C) 1 digitos
+Pos 5-9: Punto de venta (5 dígitos, zero-padded)
+Pos 10-17: Nro comprobante (8 dígitos, zero-padded)
+Pos 18-33: Sin espacios + fecha emisión (YYYYMMDD) 16 digitos
+Pos 34-40: @@@#@@C 6 espacios
+Pos 41-63: 23 Espacios bConceptos.CODCONB
+Pos 64-79: 1.00
+Pos 80-116: bConceptos.denomina
+Pos 117-161: Espacios + importe
+Pos 162-225: Espacios + importe

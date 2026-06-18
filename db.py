@@ -64,9 +64,17 @@ def crear_tabla_emitidas():
         cur = conn.cursor()
         cur.execute(sql)
         cur.execute(sql_usuarios)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS conceptos_usuario (
+                id         INT AUTO_INCREMENT PRIMARY KEY,
+                concepto   VARCHAR(100) NOT NULL,
+                usuario    VARCHAR(11)  NOT NULL,
+                created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
         conn.commit()
         cur.close(); conn.close()
-        log.info("Tablas 'factura_emitida' y 'usuariosarca' verificadas/creadas.")
+        log.info("Tablas verificadas/creadas.")
     except mysql.connector.Error as e:
         log.error(f"Error al crear tablas: {e}")
 

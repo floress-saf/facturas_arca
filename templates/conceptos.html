@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Conceptos · Facturación{% endblock %}
+{% block page_title %}Mis Conceptos{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-tags"></i> Conceptos</h3>
+        <div class="card-tools">
+            <a href="/conceptos/nuevo" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i> Nuevo concepto</a>
+        </div>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if registros %}
+        <table class="table table-hover table-striped text-nowrap table-sm">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Concepto</th>
+                    {% if session.get('es_admin') %}
+                    <th>Usuario</th>
+                    {% endif %}
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr>
+                    <td>{{ r.id }}</td>
+                    <td>{{ r.concepto }}</td>
+                    {% if session.get('es_admin') %}
+                    <td><small>{{ r.usuario }}</small></td>
+                    {% endif %}
+                    <td>
+                        <a href="/conceptos/editar/{{ r.id }}" class="btn btn-xs btn-outline-primary" title="Editar"><i class="fas fa-edit"></i></a>
+                        <form action="/conceptos/eliminar/{{ r.id }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar este concepto?')">
+                            <button type="submit" class="btn btn-xs btn-outline-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-4 text-center text-muted">
+            <p>No hay conceptos registrados.</p>
+        </div>
+        {% endif %}
+    </div>
+    <div class="card-footer">
+        <span class="text-muted">{{ registros|length }} concepto{{ 's' if registros|length != 1 }}</span>
+    </div>
+</div>
+{% endblock %}

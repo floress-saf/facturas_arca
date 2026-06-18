@@ -526,5 +526,98 @@ def _guardar_certificados(cuit_emisor, files):
     return "; ".join(errores) if errores else None
 
 
+# --- CRUD Conceptos por usuario ---
+@app.route("/conceptos")
+@login_required
+def listar_conceptos():
+    registros = []
+    try:
+        conn = get_conexion()
+        cur = conn.cursor(dictionary=True)
+        if session.get("es_admin"):
+            cur.execute("SELECT * FROM conceptos_usuario ORDER BY usuario, concepto")
+        else:
+            cur.execute("SELECT * FROM conceptos_usuario WHERE usuario = %s ORDER BY concepto", (session.get("cuil", ""),))
+        registros = cur.fetchall()
+        cur.close(); conn.close()
+    except Exception:
+        pass
+    return render_template("conceptos.html", active="conceptos", registros=registros)
+
+
+@app.route("/conceptos/nuevo", methods=["GET", "POST"])
+@login_required
+def nuevo_concepto():
+    if request.method == "GET":
+        return render_template("concepto_form.html", active="conceptos", concepto=None)
+
+    data = request.form
+    concepto_txt = data.get("concepto", "").strip().upper()
+
+    if not concepto_txt:
+        return render_template("concepto_form.html", active="conceptos", concepto=None, error="El concepto es obligatorio.")
+
+    try:
+        conn = get_conexion()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO conceptos_usuario (concepto, usuario) VALUES (%s, %s)", (concepto_txt, session.get("cuil", "")))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception as e:
+        return render_template("concepto_form.html", active="conceptos", concepto=None, error=f"Error: {e}")
+
+    return redirect("/conceptos")
+
+
+@app.route("/conceptos/editar/<int:id>", methods=["GET", "POST"])
+@login_required
+def editar_concepto(id):
+    conn = get_conexion()
+    cur = conn.cursor(dictionary=True)
+
+    if request.method == "GET":
+        cur.execute("SELECT * FROM conceptos_usuario WHERE id = %s", (id,))
+        concepto = cur.fetchone()
+        cur.close(); conn.close()
+        if not concepto:
+            return redirect("/conceptos")
+        if not session.get("es_admin") and concepto.get("usuario") != session.get("cuil", ""):
+            return "Acceso denegado", 403
+        return render_template("concepto_form.html", active="conceptos", concepto=concepto)
+
+    data = request.form
+    concepto_txt = data.get("concepto", "").strip().upper()
+
+    try:
+        if session.get("es_admin"):
+            cur.execute("UPDATE conceptos_usuario SET concepto = %s WHERE id = %s", (concepto_txt, id))
+        else:
+            cur.execute("UPDATE conceptos_usuario SET concepto = %s WHERE id = %s AND usuario = %s", (concepto_txt, id, session.get("cuil", "")))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception as e:
+        cur.close(); conn.close()
+        return render_template("concepto_form.html", active="conceptos", concepto={"id": id, "concepto": concepto_txt}, error=f"Error: {e}")
+
+    return redirect("/conceptos")
+
+
+@app.route("/conceptos/eliminar/<int:id>", methods=["POST"])
+@login_required
+def eliminar_concepto(id):
+    try:
+        conn = get_conexion()
+        cur = conn.cursor()
+        if session.get("es_admin"):
+            cur.execute("DELETE FROM conceptos_usuario WHERE id = %s", (id,))
+        else:
+            cur.execute("DELETE FROM conceptos_usuario WHERE id = %s AND usuario = %s", (id, session.get("cuil", "")))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception:
+        pass
+    return redirect("/conceptos")
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

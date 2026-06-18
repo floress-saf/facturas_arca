@@ -49,6 +49,11 @@
                             <i class="nav-icon fas fa-list"></i><p>Comprobantes emitidos</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="/conceptos" class="nav-link {% if active == 'conceptos' %}active{% endif %}">
+                            <i class="nav-icon fas fa-tags"></i><p>Conceptos</p>
+                        </a>
+                    </li>
                     {% if session.get('es_admin') %}
                     <li class="nav-header">ADMINISTRACIÓN</li>
                     <li class="nav-item">
