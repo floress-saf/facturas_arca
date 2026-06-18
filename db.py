@@ -51,6 +51,7 @@ def crear_tabla_emitidas():
             cuil        VARCHAR(11) UNIQUE NOT NULL,
             nombre      VARCHAR(20) NOT NULL,
             password    VARCHAR(32) NOT NULL,
+            email       VARCHAR(80) DEFAULT '',
             cuit_emisor VARCHAR(11) DEFAULT '',
             nombre_emisor VARCHAR(100) DEFAULT '',
             cond_iva    VARCHAR(30) DEFAULT 'Responsable Inscripto',
@@ -70,6 +71,12 @@ def crear_tabla_emitidas():
                 concepto   VARCHAR(100) NOT NULL,
                 usuario    VARCHAR(11)  NOT NULL,
                 created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS condicion_venta (
+                id         INT AUTO_INCREMENT PRIMARY KEY,
+                condicion  VARCHAR(100) NOT NULL
             )
         """)
         conn.commit()

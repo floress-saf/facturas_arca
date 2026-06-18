@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if condicion else "Nueva" }} Condición{% endblock %}
+{% block page_title %}{{ "Editar" if condicion else "Nueva" }} Condición de Venta{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <form method="POST">
+                    <div class="form-group">
+                        <label>Condición</label>
+                        <input type="text" class="form-control" name="condicion" value="{{ condicion.condicion if condicion else '' }}" required style="text-transform:uppercase;">
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                    <a href="/condiciones" class="btn btn-default ml-2">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

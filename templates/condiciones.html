@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Condición de Venta{% endblock %}
+{% block page_title %}Condición de Venta{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-handshake"></i> Condiciones de Venta</h3>
+        <div class="card-tools">
+            <a href="/condiciones/nuevo" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i> Nueva</a>
+        </div>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if registros %}
+        <table class="table table-hover table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Condición</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr>
+                    <td>{{ r.id }}</td>
+                    <td>{{ r.condicion }}</td>
+                    <td>
+                        <a href="/condiciones/editar/{{ r.id }}" class="btn btn-xs btn-outline-primary"><i class="fas fa-edit"></i></a>
+                        <form action="/condiciones/eliminar/{{ r.id }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar?')">
+                            <button type="submit" class="btn btn-xs btn-outline-danger"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-4 text-center text-muted"><p>No hay condiciones registradas.</p></div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

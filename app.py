@@ -399,6 +399,7 @@ def nuevo_usuario():
     domicilio = data.get("domicilio", "").strip()
     pto_vta = int(data.get("pto_vta", 1))
     es_admin = 1 if data.get("es_admin") else 0
+    email = data.get("email", "").strip().lower()
 
     if not cuil or not nombre or not password:
         return render_template("usuario_form.html", usuario=None, error="CUIL, nombre y contraseña son obligatorios.")
@@ -409,9 +410,9 @@ def nuevo_usuario():
         conn = get_conexion()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO usuariosarca (cuil, nombre, password, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (cuil, nombre, password_md5, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin))
+            INSERT INTO usuariosarca (cuil, nombre, password, email, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (cuil, nombre, password_md5, email, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin))
         conn.commit()
         cur.close(); conn.close()
     except Exception as e:
@@ -448,19 +449,20 @@ def editar_usuario(id):
     pto_vta = int(data.get("pto_vta", 1))
     es_admin = 1 if data.get("es_admin") else 0
     password = data.get("password", "").strip()
+    email = data.get("email", "").strip().lower()
 
     try:
         if password:
             password_md5 = hashlib.md5(password.encode()).hexdigest()
             cur.execute("""
-                UPDATE usuariosarca SET nombre=%s, password=%s, cuit_emisor=%s, nombre_emisor=%s,
+                UPDATE usuariosarca SET nombre=%s, password=%s, email=%s, cuit_emisor=%s, nombre_emisor=%s,
                     cond_iva=%s, domicilio=%s, pto_vta=%s, es_admin=%s WHERE id=%s
-            """, (nombre, password_md5, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin, id))
+            """, (nombre, password_md5, email, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin, id))
         else:
             cur.execute("""
-                UPDATE usuariosarca SET nombre=%s, cuit_emisor=%s, nombre_emisor=%s,
+                UPDATE usuariosarca SET nombre=%s, email=%s, cuit_emisor=%s, nombre_emisor=%s,
                     cond_iva=%s, domicilio=%s, pto_vta=%s, es_admin=%s WHERE id=%s
-            """, (nombre, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin, id))
+            """, (nombre, email, cuit_emisor, nombre_emisor, cond_iva, domicilio, pto_vta, es_admin, id))
         conn.commit()
         cur.close(); conn.close()
     except Exception as e:
@@ -632,6 +634,88 @@ def eliminar_concepto(id):
     except Exception:
         pass
     return redirect("/conceptos")
+
+
+# --- CRUD Condición de Venta (solo admin) ---
+@app.route("/condiciones")
+@admin_required
+def listar_condiciones():
+    registros = []
+    try:
+        conn = get_conexion()
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT * FROM condicion_venta ORDER BY condicion")
+        registros = cur.fetchall()
+        cur.close(); conn.close()
+    except Exception:
+        pass
+    return render_template("condiciones.html", active="condiciones", registros=registros)
+
+
+@app.route("/condiciones/nuevo", methods=["GET", "POST"])
+@admin_required
+def nueva_condicion():
+    if request.method == "GET":
+        return render_template("condicion_form.html", active="condiciones", condicion=None)
+
+    data = request.form
+    condicion_txt = data.get("condicion", "").strip().upper()
+
+    if not condicion_txt:
+        return render_template("condicion_form.html", active="condiciones", condicion=None, error="La condición es obligatoria.")
+
+    try:
+        conn = get_conexion()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO condicion_venta (condicion) VALUES (%s)", (condicion_txt,))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception as e:
+        return render_template("condicion_form.html", active="condiciones", condicion=None, error=f"Error: {e}")
+
+    return redirect("/condiciones")
+
+
+@app.route("/condiciones/editar/<int:id>", methods=["GET", "POST"])
+@admin_required
+def editar_condicion(id):
+    conn = get_conexion()
+    cur = conn.cursor(dictionary=True)
+
+    if request.method == "GET":
+        cur.execute("SELECT * FROM condicion_venta WHERE id = %s", (id,))
+        condicion = cur.fetchone()
+        cur.close(); conn.close()
+        if not condicion:
+            return redirect("/condiciones")
+        return render_template("condicion_form.html", active="condiciones", condicion=condicion)
+
+    data = request.form
+    condicion_txt = data.get("condicion", "").strip().upper()
+
+    try:
+        cur.execute("UPDATE condicion_venta SET condicion = %s WHERE id = %s", (condicion_txt, id))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception as e:
+        cur.close(); conn.close()
+        return render_template("condicion_form.html", active="condiciones", condicion={"id": id, "condicion": condicion_txt}, error=f"Error: {e}")
+
+    return redirect("/condiciones")
+
+
+@app.route("/condiciones/eliminar/<int:id>", methods=["POST"])
+@admin_required
+def eliminar_condicion(id):
+    try:
+        conn = get_conexion()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM condicion_venta WHERE id = %s", (id,))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception:
+        pass
+    return redirect("/condiciones")
 
 
 if __name__ == "__main__":
