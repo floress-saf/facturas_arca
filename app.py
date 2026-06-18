@@ -116,7 +116,10 @@ def index():
     try:
         conn = get_conexion()
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM factura_emitida")
+        if session.get("es_admin"):
+            cur.execute("SELECT COUNT(*) FROM factura_emitida")
+        else:
+            cur.execute("SELECT COUNT(*) FROM factura_emitida WHERE usuario = %s", (session.get("cuil", ""),))
         total = cur.fetchone()[0]
         cur.close(); conn.close()
     except Exception:
