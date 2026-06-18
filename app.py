@@ -127,13 +127,15 @@ def index():
 @app.route("/emitir", methods=["GET"])
 @login_required
 def emitir():
-    return render_template("emitir.html", tipos=TIPOS_COMPROBANTE, alicuotas=ALICUOTAS_IVA)
+    conceptos_usuario = _get_conceptos_usuario()
+    return render_template("emitir.html", tipos=TIPOS_COMPROBANTE, alicuotas=ALICUOTAS_IVA, conceptos_usuario=conceptos_usuario)
 
 
 @app.route("/emitir/lote", methods=["GET"])
 @login_required
 def emitir_lote():
-    return render_template("emitir_lote.html", tipos=TIPOS_COMPROBANTE, alicuotas=ALICUOTAS_IVA)
+    conceptos_usuario = _get_conceptos_usuario()
+    return render_template("emitir_lote.html", tipos=TIPOS_COMPROBANTE, alicuotas=ALICUOTAS_IVA, conceptos_usuario=conceptos_usuario)
 
 
 @app.route("/emitir/ultimo", methods=["GET"])
@@ -524,6 +526,19 @@ def _guardar_certificados(cuit_emisor, files):
             errores.append(f"Clave privada inválida: {e}")
 
     return "; ".join(errores) if errores else None
+
+
+def _get_conceptos_usuario():
+    """Obtiene los conceptos del usuario logueado."""
+    try:
+        conn = get_conexion()
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT id, concepto FROM conceptos_usuario WHERE usuario = %s ORDER BY concepto", (session.get("cuil", ""),))
+        conceptos = cur.fetchall()
+        cur.close(); conn.close()
+        return conceptos
+    except Exception:
+        return []
 
 
 # --- CRUD Conceptos por usuario ---

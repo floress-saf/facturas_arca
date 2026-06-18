@@ -24,9 +24,13 @@
                 <div class="form-group">
                     <label>Concepto</label>
                     <select class="form-control" id="concepto">
-                        <option value="1" selected>Productos</option>
-                        <option value="2">Servicios</option>
-                        <option value="3">Productos y Servicios</option>
+                        {% for c in conceptos_usuario %}
+                        <option value="{{ c.concepto }}">{{ c.concepto }}</option>
+                        {% endfor %}
+                        {% if not conceptos_usuario %}
+                        <option value="Productos">Productos</option>
+                        <option value="Servicios">Servicios</option>
+                        {% endif %}
                     </select>
                 </div>
             </div>
