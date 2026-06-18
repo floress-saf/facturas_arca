@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if cliente else "Nuevo" }} Cliente{% endblock %}
+{% block page_title %}{{ "Editar" if cliente else "Nuevo" }} Cliente{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>CUIT</label>
+                                <input type="text" class="form-control" name="cuit" value="{{ cliente.cuit if cliente else '' }}" maxlength="11" required>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label>Razón Social</label>
+                                <input type="text" class="form-control" name="razsoc" value="{{ cliente.razsoc if cliente else '' }}" required style="text-transform:uppercase;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" class="form-control" name="mail" value="{{ cliente.mail if cliente else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Condición IVA</label>
+                                <select class="form-control" name="condicion_iva">
+                                    <option value="Responsable Inscripto" {{ 'selected' if cliente and cliente.condicion_iva == 'Responsable Inscripto' }}>Responsable Inscripto</option>
+                                    <option value="Monotributista" {{ 'selected' if cliente and cliente.condicion_iva == 'Monotributista' }}>Monotributista</option>
+                                    <option value="Exento" {{ 'selected' if cliente and cliente.condicion_iva == 'Exento' }}>Exento</option>
+                                    <option value="Consumidor Final" {{ 'selected' if (not cliente) or (cliente and cliente.condicion_iva == 'Consumidor Final') }}>Consumidor Final</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                    <a href="/clientes" class="btn btn-default ml-2">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

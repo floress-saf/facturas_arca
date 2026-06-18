@@ -718,5 +718,107 @@ def eliminar_condicion(id):
     return redirect("/condiciones")
 
 
+# --- CRUD Clientes (cada usuario ve los suyos) ---
+@app.route("/clientes")
+@login_required
+def listar_clientes():
+    registros = []
+    try:
+        conn = get_conexion()
+        cur = conn.cursor(dictionary=True)
+        if session.get("es_admin"):
+            cur.execute("SELECT * FROM clientes ORDER BY razsoc")
+        else:
+            cur.execute("SELECT * FROM clientes WHERE usuario = %s ORDER BY razsoc", (session.get("cuil", ""),))
+        registros = cur.fetchall()
+        cur.close(); conn.close()
+    except Exception:
+        pass
+    return render_template("clientes.html", active="clientes", registros=registros)
+
+
+@app.route("/clientes/nuevo", methods=["GET", "POST"])
+@login_required
+def nuevo_cliente():
+    if request.method == "GET":
+        return render_template("cliente_form.html", active="clientes", cliente=None)
+
+    data = request.form
+    cuit = data.get("cuit", "").strip()
+    razsoc = data.get("razsoc", "").strip().upper()
+    mail = data.get("mail", "").strip().lower()
+    condicion_iva = data.get("condicion_iva", "Consumidor Final")
+
+    if not cuit or not razsoc:
+        return render_template("cliente_form.html", active="clientes", cliente=None, error="CUIT y Razón Social son obligatorios.")
+
+    try:
+        conn = get_conexion()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO clientes (cuit, razsoc, mail, condicion_iva, usuario) VALUES (%s, %s, %s, %s, %s)",
+                    (cuit, razsoc, mail, condicion_iva, session.get("cuil", "")))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception as e:
+        return render_template("cliente_form.html", active="clientes", cliente=None, error=f"Error: {e}")
+
+    return redirect("/clientes")
+
+
+@app.route("/clientes/editar/<int:id>", methods=["GET", "POST"])
+@login_required
+def editar_cliente(id):
+    conn = get_conexion()
+    cur = conn.cursor(dictionary=True)
+
+    if request.method == "GET":
+        cur.execute("SELECT * FROM clientes WHERE id = %s", (id,))
+        cliente = cur.fetchone()
+        cur.close(); conn.close()
+        if not cliente:
+            return redirect("/clientes")
+        if not session.get("es_admin") and cliente.get("usuario") != session.get("cuil", ""):
+            return "Acceso denegado", 403
+        return render_template("cliente_form.html", active="clientes", cliente=cliente)
+
+    data = request.form
+    cuit = data.get("cuit", "").strip()
+    razsoc = data.get("razsoc", "").strip().upper()
+    mail = data.get("mail", "").strip().lower()
+    condicion_iva = data.get("condicion_iva", "Consumidor Final")
+
+    try:
+        if session.get("es_admin"):
+            cur.execute("UPDATE clientes SET cuit=%s, razsoc=%s, mail=%s, condicion_iva=%s WHERE id=%s",
+                        (cuit, razsoc, mail, condicion_iva, id))
+        else:
+            cur.execute("UPDATE clientes SET cuit=%s, razsoc=%s, mail=%s, condicion_iva=%s WHERE id=%s AND usuario=%s",
+                        (cuit, razsoc, mail, condicion_iva, id, session.get("cuil", "")))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception as e:
+        cur.close(); conn.close()
+        return render_template("cliente_form.html", active="clientes", cliente=data, error=f"Error: {e}")
+
+    return redirect("/clientes")
+
+
+@app.route("/clientes/eliminar/<int:id>", methods=["POST"])
+@login_required
+def eliminar_cliente(id):
+    try:
+        conn = get_conexion()
+        cur = conn.cursor()
+        if session.get("es_admin"):
+            cur.execute("DELETE FROM clientes WHERE id = %s", (id,))
+        else:
+            cur.execute("DELETE FROM clientes WHERE id = %s AND usuario = %s", (id, session.get("cuil", "")))
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception:
+        pass
+    return redirect("/clientes")
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

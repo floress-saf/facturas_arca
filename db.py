@@ -79,6 +79,17 @@ def crear_tabla_emitidas():
                 condicion  VARCHAR(100) NOT NULL
             )
         """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS clientes (
+                id             INT AUTO_INCREMENT PRIMARY KEY,
+                cuit           VARCHAR(11) NOT NULL,
+                razsoc         VARCHAR(100) NOT NULL,
+                mail           VARCHAR(80) DEFAULT '',
+                condicion_iva  VARCHAR(30) DEFAULT 'Consumidor Final',
+                usuario        VARCHAR(11) NOT NULL,
+                created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
         conn.commit()
         cur.close(); conn.close()
         log.info("Tablas verificadas/creadas.")

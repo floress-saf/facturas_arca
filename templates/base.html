@@ -54,6 +54,11 @@
                             <i class="nav-icon fas fa-tags"></i><p>Conceptos</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="/clientes" class="nav-link {% if active == 'clientes' %}active{% endif %}">
+                            <i class="nav-icon fas fa-user-tie"></i><p>Clientes</p>
+                        </a>
+                    </li>
                     {% if session.get('es_admin') %}
                     <li class="nav-header">ADMINISTRACIÓN</li>
                     <li class="nav-item">

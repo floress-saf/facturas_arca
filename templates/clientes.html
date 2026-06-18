@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Clientes{% endblock %}
+{% block page_title %}Mis Clientes{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-user-tie"></i> Clientes</h3>
+        <div class="card-tools">
+            <a href="/clientes/nuevo" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i> Nuevo cliente</a>
+        </div>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if registros %}
+        <table class="table table-hover table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>CUIT</th>
+                    <th>Razón Social</th>
+                    <th>Email</th>
+                    <th>Cond. IVA</th>
+                    {% if session.get('es_admin') %}
+                    <th>Usuario</th>
+                    {% endif %}
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr>
+                    <td>{{ r.cuit }}</td>
+                    <td>{{ r.razsoc }}</td>
+                    <td><small>{{ r.mail }}</small></td>
+                    <td><small>{{ r.condicion_iva }}</small></td>
+                    {% if session.get('es_admin') %}
+                    <td><small>{{ r.usuario }}</small></td>
+                    {% endif %}
+                    <td>
+                        <a href="/clientes/editar/{{ r.id }}" class="btn btn-xs btn-outline-primary"><i class="fas fa-edit"></i></a>
+                        <form action="/clientes/eliminar/{{ r.id }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente?')">
+                            <button type="submit" class="btn btn-xs btn-outline-danger"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-4 text-center text-muted"><p>No hay clientes registrados.</p></div>
+        {% endif %}
+    </div>
+    <div class="card-footer">
+        <span class="text-muted">{{ registros|length }} cliente{{ 's' if registros|length != 1 }}</span>
+    </div>
+</div>
+{% endblock %}
