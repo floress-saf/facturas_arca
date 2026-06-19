@@ -57,6 +57,17 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label>Cond. Venta</label>
+                                <select class="form-control" id="condicion_venta">
+                                    <option value="">--</option>
+                                    {% for cv in condiciones_venta %}
+                                    <option value="{{ cv.condicion }}">{{ cv.condicion }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <hr>
@@ -200,6 +211,7 @@
             importe_total: document.getElementById("importe_total").value,
             moneda: document.getElementById("moneda").value,
             iva_id: document.getElementById("iva_id").value,
+            condicion_venta: document.getElementById("condicion_venta").value,
         };
 
         try {

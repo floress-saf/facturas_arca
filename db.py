@@ -28,6 +28,7 @@ def crear_tabla_emitidas():
             nro_cmp         BIGINT         NOT NULL,
             fecha           VARCHAR(10)    NOT NULL,
             concepto        VARCHAR(100)   DEFAULT '',
+            condicion_venta VARCHAR(100)   DEFAULT '',
             doc_tipo        INT            DEFAULT 80,
             doc_nro         BIGINT         NOT NULL,
             nombre_receptor VARCHAR(100)   DEFAULT '',
@@ -102,10 +103,10 @@ def crear_tabla_emitidas():
 def insertar_factura_emitida(datos):
     sql = """
         INSERT INTO factura_emitida
-            (tipo_cmp, pto_vta, nro_cmp, fecha, concepto, doc_tipo, doc_nro,
+            (tipo_cmp, pto_vta, nro_cmp, fecha, concepto, condicion_venta, doc_tipo, doc_nro,
              nombre_receptor, importe_neto, importe_iva, importe_exento,
              importe_total, moneda, cae, cae_vto, resultado, archivo_pdf, usuario)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     try:
         conn = get_conexion()
@@ -116,6 +117,7 @@ def insertar_factura_emitida(datos):
             datos["nro_cmp"],
             datos["fecha"],
             datos.get("concepto", ""),
+            datos.get("condicion_venta", ""),
             datos.get("doc_tipo", 80),
             datos["doc_nro"],
             datos.get("nombre_receptor", ""),

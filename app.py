@@ -133,14 +133,16 @@ def index():
 @login_required
 def emitir():
     conceptos_usuario = _get_conceptos_usuario()
-    return render_template("emitir.html", tipos=TIPOS_COMPROBANTE, alicuotas=ALICUOTAS_IVA, conceptos_usuario=conceptos_usuario)
+    condiciones_venta = _get_condiciones_venta()
+    return render_template("emitir.html", tipos=TIPOS_COMPROBANTE, alicuotas=ALICUOTAS_IVA, conceptos_usuario=conceptos_usuario, condiciones_venta=condiciones_venta)
 
 
 @app.route("/emitir/lote", methods=["GET"])
 @login_required
 def emitir_lote():
     conceptos_usuario = _get_conceptos_usuario()
-    return render_template("emitir_lote.html", tipos=TIPOS_COMPROBANTE, alicuotas=ALICUOTAS_IVA, conceptos_usuario=conceptos_usuario)
+    condiciones_venta = _get_condiciones_venta()
+    return render_template("emitir_lote.html", tipos=TIPOS_COMPROBANTE, alicuotas=ALICUOTAS_IVA, conceptos_usuario=conceptos_usuario, condiciones_venta=condiciones_venta)
 
 
 @app.route("/emitir/ultimo", methods=["GET"])
@@ -269,6 +271,7 @@ def solicitar_cae():
         "cae": cae,
         "cae_vto": cae_vto,
         "moneda": moneda,
+        "condicion_venta": data.get("condicion_venta", ""),
         "items": data.get("items", [{"descripcion": concepto or "Servicio", "cantidad": 1, "precio": importe_neto, "subtotal": importe_neto}])
     }
 
@@ -283,6 +286,7 @@ def solicitar_cae():
         "nro_cmp": nro_cmp,
         "fecha": fecha,
         "concepto": concepto,
+        "condicion_venta": data.get("condicion_venta", ""),
         "doc_tipo": doc_tipo,
         "doc_nro": doc_nro,
         "nombre_receptor": data.get("nombre_receptor", ""),
@@ -570,6 +574,19 @@ def _get_conceptos_usuario():
         conceptos = cur.fetchall()
         cur.close(); conn.close()
         return conceptos
+    except Exception:
+        return []
+
+
+def _get_condiciones_venta():
+    """Obtiene las condiciones de venta."""
+    try:
+        conn = get_conexion()
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT id, condicion FROM condicion_venta ORDER BY condicion")
+        condiciones = cur.fetchall()
+        cur.close(); conn.close()
+        return condiciones
     except Exception:
         return []
 

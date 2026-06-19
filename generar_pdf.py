@@ -114,6 +114,7 @@ def generar_pdf_factura(datos_factura, output_path=None):
     c.drawString(30*mm, y - 5*mm, f"Razón Social: {datos_factura.get('nombre_receptor', '')}")
     c.drawString(30*mm, y - 9*mm, f"CUIT: {datos_factura['doc_nro']}")
     c.drawString(30*mm, y - 13*mm, f"Condición IVA: {datos_factura.get('cond_iva_receptor', '')}")
+    c.drawString(30*mm, y - 17*mm, f"Condición de Venta: {datos_factura.get('condicion_venta', '')}")
 
     # --- Detalle / Items ---
     y -= 25*mm
