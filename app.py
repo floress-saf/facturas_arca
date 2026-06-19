@@ -177,7 +177,12 @@ def solicitar_cae():
     importe_neto = float(data.get("importe_neto", importe_total))
     importe_iva = float(data.get("importe_iva", 0))
     importe_exento = float(data.get("importe_exento", 0))
-    concepto = int(data.get("concepto", 1))
+    concepto = data.get("concepto", "1")
+    # Si es numérico, usarlo como ID de concepto ARCA; si es texto, usar 1 (Productos)
+    try:
+        concepto_id = int(concepto)
+    except (ValueError, TypeError):
+        concepto_id = 1
     doc_tipo = int(data.get("doc_tipo", 80))
     moneda = data.get("moneda", "PES")
     iva_id = int(data.get("iva_id", 5))  # 5 = 21%
@@ -213,7 +218,7 @@ def solicitar_cae():
         "pto_vta": pto_vta,
         "nro_cmp": nro_cmp,
         "fecha": fecha,
-        "concepto": concepto,
+        "concepto": concepto_id,
         "doc_tipo": doc_tipo,
         "doc_nro": doc_nro,
         "importe_total": importe_total,
@@ -228,7 +233,7 @@ def solicitar_cae():
     }
 
     # Agregar fechas de servicio si corresponde
-    if concepto in (2, 3):
+    if concepto_id in (2, 3):
         datos_wsfe["fch_serv_desde"] = data.get("fch_serv_desde", fecha)
         datos_wsfe["fch_serv_hasta"] = data.get("fch_serv_hasta", fecha)
         datos_wsfe["fch_vto_pago"] = data.get("fch_vto_pago", fecha)
@@ -279,7 +284,7 @@ def solicitar_cae():
         "pto_vta": pto_vta,
         "nro_cmp": nro_cmp,
         "fecha": fecha,
-        "concepto": concepto,
+        "concepto": concepto_id,
         "doc_tipo": doc_tipo,
         "doc_nro": doc_nro,
         "nombre_receptor": data.get("nombre_receptor", ""),
