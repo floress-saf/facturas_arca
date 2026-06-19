@@ -57,7 +57,9 @@ def crear_tabla_emitidas():
             cond_iva    VARCHAR(30) DEFAULT 'Responsable Inscripto',
             domicilio   VARCHAR(200) DEFAULT '',
             pto_vta     INT DEFAULT 1,
-            es_admin    TINYINT(1) DEFAULT 0
+            es_admin    TINYINT(1) DEFAULT 0,
+            cert_path   VARCHAR(300) DEFAULT '',
+            key_path    VARCHAR(300) DEFAULT ''
         )
     """
     try:

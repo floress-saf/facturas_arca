@@ -99,6 +99,8 @@ def login():
     session["domicilio"] = user.get("domicilio", "").strip()
     session["pto_vta"] = user.get("pto_vta", 1)
     session["es_admin"] = user.get("es_admin", 0)
+    session["cert_path"] = user.get("cert_path", "").strip()
+    session["key_path"] = user.get("key_path", "").strip()
     return redirect("/")
 
 
@@ -148,8 +150,8 @@ def ultimo_comprobante():
     pto_vta = request.args.get("pto_vta", 1, type=int)
     tipo_cmp = request.args.get("tipo_cmp", 1, type=int)
     cuit_emisor = session.get("cuit_emisor", "")
-    cert_path = f"certs/{cuit_emisor}/certificado.crt" if cuit_emisor else None
-    key_path = f"certs/{cuit_emisor}/privada.key" if cuit_emisor else None
+    cert_path = session.get("cert_path") or (f"certs/{cuit_emisor}/certificado.crt" if cuit_emisor else None)
+    key_path = session.get("key_path") or (f"certs/{cuit_emisor}/privada.key" if cuit_emisor else None)
     try:
         ultimo = fe_comp_ultimo_autorizado(pto_vta, tipo_cmp, cuit=int(cuit_emisor) if cuit_emisor else None, cert_path=cert_path, key_path=key_path)
         return jsonify({"ok": True, "ultimo": ultimo, "siguiente": ultimo + 1})
@@ -185,8 +187,8 @@ def solicitar_cae():
 
     # Obtener siguiente número
     cuit_emisor = session.get("cuit_emisor", "")
-    cert_path = f"certs/{cuit_emisor}/certificado.crt" if cuit_emisor else None
-    key_path = f"certs/{cuit_emisor}/privada.key" if cuit_emisor else None
+    cert_path = session.get("cert_path") or (f"certs/{cuit_emisor}/certificado.crt" if cuit_emisor else None)
+    key_path = session.get("key_path") or (f"certs/{cuit_emisor}/privada.key" if cuit_emisor else None)
     cuit_int = int(cuit_emisor) if cuit_emisor else None
 
     try:
@@ -511,24 +513,47 @@ def _guardar_certificados(cuit_emisor, files):
     os.makedirs(cert_dir, exist_ok=True)
 
     # Validar y guardar certificado
+    cert_path_saved = ""
     if cert_file and cert_file.filename:
         cert_data = cert_file.read()
         try:
             x509.load_pem_x509_certificate(cert_data)
-            with open(os.path.join(cert_dir, "certificado.crt"), "wb") as f:
+            cert_path_saved = os.path.join(cert_dir, "certificado.crt")
+            with open(cert_path_saved, "wb") as f:
                 f.write(cert_data)
         except Exception as e:
             errores.append(f"Certificado inválido: {e}")
 
     # Validar y guardar clave privada
+    key_path_saved = ""
     if key_file and key_file.filename:
         key_data = key_file.read()
         try:
             serialization.load_pem_private_key(key_data, password=None)
-            with open(os.path.join(cert_dir, "privada.key"), "wb") as f:
+            key_path_saved = os.path.join(cert_dir, "privada.key")
+            with open(key_path_saved, "wb") as f:
                 f.write(key_data)
         except Exception as e:
             errores.append(f"Clave privada inválida: {e}")
+
+    # Guardar paths en la tabla usuariosarca
+    if (cert_path_saved or key_path_saved) and not errores:
+        try:
+            conn = get_conexion()
+            cur = conn.cursor()
+            if cert_path_saved and key_path_saved:
+                cur.execute("UPDATE usuariosarca SET cert_path=%s, key_path=%s WHERE cuit_emisor=%s",
+                            (f"certs/{cuit_emisor}/certificado.crt", f"certs/{cuit_emisor}/privada.key", cuit_emisor))
+            elif cert_path_saved:
+                cur.execute("UPDATE usuariosarca SET cert_path=%s WHERE cuit_emisor=%s",
+                            (f"certs/{cuit_emisor}/certificado.crt", cuit_emisor))
+            elif key_path_saved:
+                cur.execute("UPDATE usuariosarca SET key_path=%s WHERE cuit_emisor=%s",
+                            (f"certs/{cuit_emisor}/privada.key", cuit_emisor))
+            conn.commit()
+            cur.close(); conn.close()
+        except Exception:
+            pass
 
     return "; ".join(errores) if errores else None
 
