@@ -269,7 +269,7 @@ def solicitar_cae():
         "cae": cae,
         "cae_vto": cae_vto,
         "moneda": moneda,
-        "items": data.get("items", [{"descripcion": "Servicio", "cantidad": 1, "precio": importe_neto, "subtotal": importe_neto}])
+        "items": data.get("items", [{"descripcion": concepto or "Servicio", "cantidad": 1, "precio": importe_neto, "subtotal": importe_neto}])
     }
 
     pdf_filename = f"{tipo_cmp}_{pto_vta}_{nro_cmp}.pdf"
