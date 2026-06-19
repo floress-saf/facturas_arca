@@ -177,12 +177,10 @@ def solicitar_cae():
     importe_neto = float(data.get("importe_neto", importe_total))
     importe_iva = float(data.get("importe_iva", 0))
     importe_exento = float(data.get("importe_exento", 0))
-    concepto = data.get("concepto", "1")
-    # Si es numérico, usarlo como ID de concepto ARCA; si es texto, usar 1 (Productos)
-    try:
-        concepto_id = int(concepto)
-    except (ValueError, TypeError):
-        concepto_id = 1
+    concepto = data.get("concepto", "")
+    # Para ARCA siempre se envía concepto_id=1 (Productos)
+    # El texto del concepto se guarda en la DB
+    concepto_id = 1
     doc_tipo = int(data.get("doc_tipo", 80))
     moneda = data.get("moneda", "PES")
     iva_id = int(data.get("iva_id", 5))  # 5 = 21%
@@ -284,7 +282,7 @@ def solicitar_cae():
         "pto_vta": pto_vta,
         "nro_cmp": nro_cmp,
         "fecha": fecha,
-        "concepto": concepto_id,
+        "concepto": concepto,
         "doc_tipo": doc_tipo,
         "doc_nro": doc_nro,
         "nombre_receptor": data.get("nombre_receptor", ""),
